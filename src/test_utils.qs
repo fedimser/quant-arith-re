@@ -18,16 +18,17 @@ namespace QuantumArithmetic.Test {
     }
 
     // TODO: do we have this in standard library?
-    operation EncodeIntegerToRegister(val: Int, reg : Qubit[]) : Unit {
+    operation EncodeIntegerToRegister(val : Int, reg : Qubit[]) : Unit {
+        Fact(val >= 0, "Value must be non-negative.");
         let n = Length(reg);
         mutable v = val;
         for i in 0..n-1 {
-            if (v % 2==1) {
+            if (v % 2 == 1) {
                 X(reg[i]);
             }
-            set v /=2;
+            set v /= 2;
         }
-        Fact(v==0, "Register is too small.");
+        Fact(v == 0, "Register is too small.");
     }
 
     // 1. Creates qubit register x of size xn, populates it with integer x_val.
@@ -35,7 +36,7 @@ namespace QuantumArithmetic.Test {
     // 3. Calls op(x, y).
     // 4. Measures value in y and returns it.
     // All numbers are little-endian.
-    operation PerformArithmeticOperationInPlace(xn: Int, yn: Int, x_val: Int, y_val: Int, op: (Qubit[], Qubit[]) => Unit) : Int {
+    operation PerformArithmeticOperationInPlace(xn : Int, yn : Int, x_val : Int, y_val : Int, op : (Qubit[], Qubit[]) => Unit) : Int {
         use x = Qubit[xn];
         use y = Qubit[yn];
         EncodeIntegerToRegister(x_val, x);

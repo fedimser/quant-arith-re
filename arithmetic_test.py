@@ -8,7 +8,7 @@ import random
 @pytest.mark.parametrize("n", [2, 3, 5, 8])
 def test_addition(n: int):
     init(project_root='.')
-    op = "QuantumArithmetic.IncByLE"
+    op = "QuantumArithmetic.Add_RippleCarryTTK"
     for _ in range(10):
         x = random.randint(0, 2**n-1)
         y = random.randint(0, 2**n-1)
@@ -16,4 +16,17 @@ def test_addition(n: int):
             QuantumArithmetic.Test.PerformArithmeticOperationInPlace({n},{n},{x},{y},{op})
         """)
         expected = (x+y) % (2**n)
+        assert ans == expected
+
+@pytest.mark.parametrize("n", [2, 3, 5, 8])
+def test_subtraction(n: int):
+    init(project_root='.')
+    op = "QuantumArithmetic.Subtract"
+    for _ in range(10):
+        x = random.randint(0, 2**n-1)
+        y = random.randint(0, 2**n-1)
+        ans = eval(f"""
+            QuantumArithmetic.Test.PerformArithmeticOperationInPlace({n},{n},{x},{y},{op})
+        """)
+        expected = (y-x) % (2**n)
         assert ans == expected

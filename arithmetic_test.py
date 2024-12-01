@@ -3,7 +3,6 @@
 import pytest
 from qsharp import init, eval
 import random
-import time
 
 
 @pytest.mark.parametrize("n", [2, 3, 5, 8, 16, 32, 63])
@@ -34,26 +33,24 @@ def test_subtraction(n: int):
         assert ans == expected
 
 
+@pytest.mark.parametrize("op", ["Divide_TMVH_Restoring", "Divide_TMVH_NonRestoring"])
 @pytest.mark.parametrize("n", [2, 3, 4, 5])
-def test_division_exhaustive(n: int):
+def test_division_exhaustive(op: str, n: int):
     init(project_root='.')
-    op = "QuantumArithmetic.Test.Test_Divide_TMVH_Restoring"
     for x in range(0, 2**n):
         for y in range(1, 2**(n-1)):
-            q, r = eval(f"{op}({n},{x},{y})")
+            q, r = eval(f"QuantumArithmetic.Test.Test_{op}({n},{x},{y})")
             assert q == x//y
             assert r == x % y
 
 
+@pytest.mark.parametrize("op", ["Divide_TMVH_Restoring", "Divide_TMVH_NonRestoring"])
 @pytest.mark.parametrize("n", [8, 16, 24, 32, 63])
-def test_division_random(n: int):
+def test_division_random(op: str, n: int):
     init(project_root='.')
-    op = "QuantumArithmetic.Test.Test_Divide_TMVH_Restoring"
-    for _ in range(10):
+    for _ in range(5):
         x = random.randint(0, 2**n-1)
         y = random.randint(1, 2**(n-1)-1)
-        t0 = time.time()
-        q, r = eval(f"{op}({n},{x},{y})")
-        print("n=", n, time.time()-t0)
+        q, r = eval(f"QuantumArithmetic.Test.Test_{op}({n},{x},{y})")
         assert q == x//y
         assert r == x % y

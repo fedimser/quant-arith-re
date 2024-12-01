@@ -3,8 +3,7 @@ namespace QuantumArithmetic.Test {
     import Std.Arithmetic.IncByLE;
 
     // Reads out little-endian value of qubit using measurements.
-    // Leaves register in all-zeros state.
-    // TODO: do we have this in standard library?
+    // Leaves reg in all-zeros state.
     operation MeasureRegisterToLE(reg : Qubit[]) : Int {
         let n = Length(reg);
         mutable base : Int = 1;
@@ -20,7 +19,8 @@ namespace QuantumArithmetic.Test {
         return ans;
     }
 
-    // TODO: do we have this in standard library?
+    // Writes non-negative little-endian integer to quantum register.
+    // reg must be prepared in all-zeros state.
     operation EncodeIntegerToRegister(val : Int, reg : Qubit[]) : Unit {
         Fact(val >= 0, "Value must be non-negative.");
         let n = Length(reg);
@@ -49,22 +49,5 @@ namespace QuantumArithmetic.Test {
         Fact(new_x == x_val, "x was changed.");
         let ans = MeasureRegisterToLE(y);
         return ans;
-    }
-
-    // Helper to test Divide_TMVH.
-    // n is number of bits per register.
-    // Return pair (a_val/b_val, a_val%b_val).
-    operation Test_Divide_TMVH_Restoring(n : Int, a_val : Int, b_val : Int) : (Int, Int) {
-        use a = Qubit[n];
-        use b = Qubit[n];
-        use c = Qubit[n];
-        EncodeIntegerToRegister(a_val, a);
-        EncodeIntegerToRegister(b_val, b);
-        QuantumArithmetic.Divide_TMVH_Restoring(a, b, c);
-        let q_val = MeasureRegisterToLE(c);
-        let new_b_val = MeasureRegisterToLE(b);
-        let r_val = MeasureRegisterToLE(a);
-        Fact(new_b_val == b_val, "b was changed.");
-        return (q_val, r_val);
     }
 }

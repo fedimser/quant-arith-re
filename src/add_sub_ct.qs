@@ -24,8 +24,7 @@ namespace QuantumArithmetic {
         ResetAll(carry);
     }
 
-    // 1-bit quantum full subtractor.
-    
+    // 1-bit quantum full subtractor.    
     operation QFS_CT(borrow_im1: Qubit, a_i: Qubit, b_i: Qubit, borrow_i: Qubit): Unit is Adj + Ctl {
         CNOT(borrow_im1, b_i);
         X(a_i);

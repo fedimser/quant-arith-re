@@ -1,7 +1,6 @@
-/// Implementation of 2 division algorithms presented in paper:
+/// Implementation of 2 division algorithms presented in the paper:
 ///   Quantum Circuit Designs of Integer Division Optimizing T-count and T-depth,
-///   Thapliyal, Munoz-Coreas, Varun, Humble, 2019,
-///   https://arxiv.org/pdf/1809.09732 (Algorithm 1).
+///   Thapliyal, Munoz-Coreas, Varun, Humble, 2019, https://arxiv.org/pdf/1809.09732.
 
 namespace QuantumArithmetic {
     import Std.Diagnostics.Fact;

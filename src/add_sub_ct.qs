@@ -1,4 +1,4 @@
-/// Implementation of addition and substraction presented in paper:
+/// Implementation of addition and subtraction presented in paper:
 ///   Quantum full adder and subtractor,
 ///   Kai-Wen Cheng and Chien-Cheng Tseng, 2002.
 

@@ -7,7 +7,7 @@ namespace QuantumArithmetic {
 
     // Computes ys+=xs if ctrl=1, does nothing if ctrl=0.
     operation CtrlAdd(ctrl : Qubit, xs : Qubit[], ys : Qubit[]) : Unit is Adj + Ctl {
-        Controlled Add_RippleCarryTTK([ctrl], (xs, ys));
+        Controlled Std.Arithmetic.RippleCarryTTKIncByLE([ctrl], (xs, ys));
     }
 
     // Computes ys-=xs if ctrl=1, and ys+=xs if ctrl=0.

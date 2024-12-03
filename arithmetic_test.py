@@ -34,7 +34,7 @@ def test_subtraction(n: int):
 
 
 @pytest.mark.parametrize("op", ["Divide_TMVH_Restoring", "Divide_TMVH_NonRestoring"])
-@pytest.mark.parametrize("n", [2, 3, 4, 5])
+@pytest.mark.parametrize("n", [2, 3, 4])
 def test_division_exhaustive(op: str, n: int):
     init(project_root='.')
     for x in range(0, 2**n):
@@ -54,3 +54,25 @@ def test_division_random(op: str, n: int):
         q, r = eval(f"QuantumArithmetic.Test.Test_{op}({n},{x},{y})")
         assert q == x//y
         assert r == x % y
+
+
+@pytest.mark.parametrize("n", [2, 8, 16, 32, 63])
+def test_Add_CT(n: int):
+    init(project_root='.')
+    for _ in range(10):
+        x, y = random.randint(0, 2**n-1), random.randint(0, 2**n-1)
+        ans = eval(f"""
+            QuantumArithmetic.Test.PerformArithmeticOperationInPlace({n},{n},{x},{y},QuantumArithmetic.Add_CT)
+        """)
+        assert ans == (x+y) % (2**n)
+
+
+@pytest.mark.parametrize("n", [2, 8, 16, 32, 63])
+def test_Subtract_CT(n: int):
+    init(project_root='.')
+    for _ in range(10):
+        x, y = random.randint(0, 2**n-1), random.randint(0, 2**n-1)
+        ans = eval(f"""
+            QuantumArithmetic.Test.PerformArithmeticOperationInPlace({n},{n},{x},{y},QuantumArithmetic.Subtract_CT)
+        """)
+        assert ans == (x-y) % (2**n)

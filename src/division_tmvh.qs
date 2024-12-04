@@ -83,12 +83,12 @@ namespace QuantumArithmetic.Test {
         use a = Qubit[n];
         use b = Qubit[n];
         use c = Qubit[n];
-        EncodeIntegerToRegister(a_val, a);
-        EncodeIntegerToRegister(b_val, b);
+        ApplyPauliFromInt(PauliX, true, a_val, a);
+        ApplyPauliFromInt(PauliX, true, b_val, b);
         QuantumArithmetic.Divide_TMVH_Restoring(a, b, c);
-        let q_val = MeasureRegisterToLE(c);
-        let new_b_val = MeasureRegisterToLE(b);
-        let r_val = MeasureRegisterToLE(a);
+        let q_val = MeasureInteger(c);
+        let new_b_val = MeasureInteger(b);
+        let r_val = MeasureInteger(a);
         Fact(new_b_val == b_val, "b was changed.");
         return (q_val, r_val);
     }
@@ -101,12 +101,12 @@ namespace QuantumArithmetic.Test {
         use a = Qubit[n];
         use b = Qubit[n];
         use c = Qubit[n-1];
-        EncodeIntegerToRegister(a_val, a);
-        EncodeIntegerToRegister(b_val, b);
+        ApplyPauliFromInt(PauliX, true, a_val, a);
+        ApplyPauliFromInt(PauliX, true, b_val, b);
         QuantumArithmetic.Divide_TMVH_NonRestoring(a, b, c);
-        let q_val = MeasureRegisterToLE([a[n-1]] + c);
-        let new_b_val = MeasureRegisterToLE(b);
-        let r_val = MeasureRegisterToLE(a[0..n-2]);
+        let q_val = MeasureInteger([a[n-1]] + c);
+        let new_b_val = MeasureInteger(b);
+        let r_val = MeasureInteger(a[0..n-2]);
         Fact(new_b_val == b_val, "b was changed.");
         return (q_val, r_val);
     }

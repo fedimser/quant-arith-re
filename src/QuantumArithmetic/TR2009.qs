@@ -35,7 +35,7 @@ operation RFS(A : Qubit, B : Qubit, C : Qubit, Z : Qubit) : Unit is Adj + Ctl {
 operation Subtract(B : Qubit[], A : Qubit[]) : Unit {
     let n = Length(A);
     Fact(Length(B) == n, "Registers sizes must match.");
-    use Z = Qubit[n] ;
+    use Z = Qubit[n];
     RHS(A[0], B[0], Z[0]);
     for i in 1..n-1 {
         let prev_borr = Z[i-1];

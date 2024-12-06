@@ -44,9 +44,8 @@ operation SubtractWithGarbage(B : Qubit[], A : Qubit[], Z : Qubit[]) : Unit is A
     }
 }
 
-// Computes C := (A-B) % 2^n.
+// Computes C ⊕= (A-B) % 2^n.
 // Doesn't change A and B.
-// C must be prepared in zero state.
 // Numbers are little-endian.
 operation Subtract(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit is Adj + Ctl {
     let n = Length(A);

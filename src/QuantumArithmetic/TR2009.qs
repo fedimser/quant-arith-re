@@ -30,18 +30,36 @@ operation RFS(A : Qubit, B : Qubit, C : Qubit, Z : Qubit) : Unit is Adj + Ctl {
 }
 
 // Computes (B, A) := (B, A-B).
-// Number are little-endian.
+// Z must be prepared in zero state, and is left in some "garbage" state.
+// Numbers are little-endian.
 // Computation is modulo 2^n, where n is the size of registers.
-operation Subtract(B : Qubit[], A : Qubit[]) : Unit {
+operation SubtractWithGarbage(B : Qubit[], A : Qubit[], Z : Qubit[]) : Unit is Adj + Ctl {
     let n = Length(A);
     Fact(Length(B) == n, "Registers sizes must match.");
-    use Z = Qubit[n];
+    Fact(Length(Z) == n, "Registers sizes must match.");
     RHS(A[0], B[0], Z[0]);
     for i in 1..n-1 {
         let prev_borr = Z[i-1];
         RFS(A[i], B[i], prev_borr, Z[i]);
     }
-    ResetAll(Z);
+}
+
+// Computes C := (A-B) % 2^n.
+// Doesn't change A and B.
+// C must be prepared in zero state.
+// Numbers are little-endian.
+operation Subtract(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit is Adj + Ctl {
+    let n = Length(A);
+    Fact(Length(B) == n, "Registers sizes must match.");
+    Fact(Length(C) == n, "Registers sizes must match.");
+    use Z = Qubit[n];
+    within {
+        SubtractWithGarbage(B, A, Z);
+    } apply {
+        for i in 0..n-1 {
+            CNOT(A[i], C[i]);
+        }
+    }
 }
 
 export Subtract;

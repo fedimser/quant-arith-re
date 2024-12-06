@@ -22,5 +22,5 @@ def test_Subtract(n: int):
     op = "QuantumArithmetic.CT2002.Subtract"
     for _ in range(10):
         x, y = random.randint(0, 2**n-1), random.randint(0, 2**n-1)
-        ans = eval(f"TestUtils.BinaryOpInPlace({n},{x},{y},{op})")
+        ans = eval(f"TestUtils.BinaryOp({n},{x},{y},{op})")
         assert ans == (x-y) % (2**n)

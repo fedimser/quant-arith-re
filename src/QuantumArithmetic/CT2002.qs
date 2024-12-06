@@ -13,17 +13,17 @@ operation QFA(carry_im1 : Qubit, a_i : Qubit, b_i : Qubit, carry_i : Qubit) : Un
 }
 
 // Computes (a,b) = (a, a+b).
-operation AddWithGarbage(a : Qubit[], b : Qubit[], carry: Qubit[]) : Unit is Adj + Ctl  {
+operation AddWithGarbage(a : Qubit[], b : Qubit[], carry : Qubit[]) : Unit is Adj + Ctl {
     let n = Length(a);
     Fact(Length(b) == n, "Registers sizes must match.");
-    Fact(Length(carry) == n+1, "Registers sizes must match.");
+    Fact(Length(carry) == n + 1, "Registers sizes must match.");
     for i in 0..n-1 {
         QFA(carry[i], a[i], b[i], carry[i + 1]);
     }
 }
 
 // Computes C ⊕= (A+B) % 2^n.
-operation Add(A : Qubit[], B : Qubit[], C: Qubit[]) : Unit is Adj + Ctl  {
+operation Add(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit is Adj + Ctl {
     let n = Length(A);
     Fact(Length(B) == n, "Registers sizes must match.");
     Fact(Length(C) == n, "Registers sizes must match.");
@@ -50,14 +50,28 @@ operation QFS(borrow_im1 : Qubit, a_i : Qubit, b_i : Qubit, borrow_i : Qubit) : 
 }
 
 // Computes (a,b) = (a, a-b).
-operation Subtract(a : Qubit[], b : Qubit[]) : Unit {
+operation SubtractWithGarbage(a : Qubit[], b : Qubit[], brw : Qubit[]) : Unit is Adj + Ctl {
     let n = Length(a);
     Fact(Length(b) == n, "Registers sizes must match.");
-    use brw = Qubit[n + 1];
+    Fact(Length(brw) == n + 1, "Registers sizes must match.");
     for i in 0..n-1 {
         QFS(brw[i], a[i], b[i], brw[i + 1]);
     }
-    ResetAll(brw);
+}
+
+// Computes C ⊕= (A-B) % 2^n.
+operation Subtract(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit is Adj + Ctl {
+    let n = Length(A);
+    Fact(Length(B) == n, "Registers sizes must match.");
+    Fact(Length(C) == n, "Registers sizes must match.");
+    use brw = Qubit[n + 1];
+    within {
+        SubtractWithGarbage(A, B, brw);
+    } apply {
+        for i in 0..n-1 {
+            CNOT(B[i], C[i]);
+        }
+    }
 }
 
 export Add, Subtract;

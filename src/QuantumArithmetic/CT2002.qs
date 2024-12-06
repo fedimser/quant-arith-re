@@ -13,14 +13,28 @@ operation QFA(carry_im1 : Qubit, a_i : Qubit, b_i : Qubit, carry_i : Qubit) : Un
 }
 
 // Computes (a,b) = (a, a+b).
-operation Add(a : Qubit[], b : Qubit[]) : Unit {
+operation AddWithGarbage(a : Qubit[], b : Qubit[], carry: Qubit[]) : Unit is Adj + Ctl  {
     let n = Length(a);
     Fact(Length(b) == n, "Registers sizes must match.");
-    use carry = Qubit[n + 1];
+    Fact(Length(carry) == n+1, "Registers sizes must match.");
     for i in 0..n-1 {
         QFA(carry[i], a[i], b[i], carry[i + 1]);
     }
-    ResetAll(carry);
+}
+
+// Computes C ⊕= (A+B) % 2^n.
+operation Add(A : Qubit[], B : Qubit[], C: Qubit[]) : Unit is Adj + Ctl  {
+    let n = Length(A);
+    Fact(Length(B) == n, "Registers sizes must match.");
+    Fact(Length(C) == n, "Registers sizes must match.");
+    use carry = Qubit[n + 1];
+    within {
+        AddWithGarbage(A, B, carry);
+    } apply {
+        for i in 0..n-1 {
+            CNOT(B[i], C[i]);
+        }
+    }
 }
 
 // 1-bit quantum full subtractor.

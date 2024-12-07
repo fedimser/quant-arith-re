@@ -14,6 +14,19 @@ operation TR(A : Qubit, B : Qubit, C : Qubit) : Unit is Adj + Ctl {
     CNOT(A, B);
 }
 
+operation V(target : Qubit) : Unit is Adj + Ctl {
+    Rx(Std.Math.PI() * 0.5, target);
+}
+
+// Alternative implementation from https://arxiv.org/abs/1712.02630
+// It has lower cost, but cannot be efficiently simulated.
+operation TR_alt(A : Qubit, B : Qubit, C : Qubit) : Unit is Adj + Ctl {
+    Controlled Adjoint V([B], C);
+    CNOT(A, B);
+    Controlled V([A], C);
+    Controlled V([B], C);
+}
+
 // Reversible Half Subtractor.
 // A, B are inputs. Z must be initialized to 0.
 // Computes: (A, B, Z) := (A⊕B, B, !A*B) = (Diff, B, Borr).

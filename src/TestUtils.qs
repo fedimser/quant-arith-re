@@ -1,3 +1,4 @@
+import Std.Math.ExpModI;
 import Std.Diagnostics.Fact;
 
 // Applies binary operation on quantum integers.
@@ -37,5 +38,19 @@ operation BinaryOpInPlace(n : Int, x_val : Int, y_val : Int, op : (Qubit[], Qubi
     let new_x = MeasureInteger(x);
     Fact(new_x == x_val, "x was changed.");
     let ans = MeasureInteger(y);
+    return ans;
+}
+
+operation BinaryOpInPlaceExtraOut(n : Int, x_val : Int, y_val : Int, op : (Qubit[], Qubit[], Qubit) => Unit) : Int {
+    use x = Qubit[n];
+    use y = Qubit[n];
+    use z = Qubit();
+    ApplyPauliFromInt(PauliX, true, x_val, x);
+    ApplyPauliFromInt(PauliX, true, y_val, y);
+    op(x, y, z);
+    let new_x = MeasureInteger(x);
+    Fact(new_x == x_val, "x was changed.");
+    let results = y + [z];
+    let ans = MeasureInteger(results);
     return ans;
 }

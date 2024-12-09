@@ -2,6 +2,7 @@
     "license": "MIT",
     "files": [
       "src/QuantumArithmetic/AdditionStd.qs",
+      "src/QuantumArithmetic/CDKM2004.qs",
       "src/QuantumArithmetic/CT2002.qs",
       "src/QuantumArithmetic/TMVH2019.qs",
       "src/QuantumArithmetic/TMVH2019Test.qs",

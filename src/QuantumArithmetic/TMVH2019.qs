@@ -1,12 +1,17 @@
 /// Implementation of 2 division algorithms presented in the paper:
 ///   Quantum Circuit Designs of Integer Division Optimizing T-count and T-depth,
 ///   Thapliyal, Munoz-Coreas, Varun, Humble, 2019, https://arxiv.org/pdf/1809.09732.
+/// All numbers are little-endian.
 
 import Std.Diagnostics.Fact;
 
+operation Add(xs : Qubit[], ys : Qubit[]) : Unit is Adj + Ctl {
+    Std.Arithmetic.RippleCarryTTKIncByLE(xs, ys);
+}
+
 // Computes ys+=xs if ctrl=1, does nothing if ctrl=0.
 operation CtrlAdd(ctrl : Qubit, xs : Qubit[], ys : Qubit[]) : Unit is Adj + Ctl {
-    Controlled Std.Arithmetic.RippleCarryTTKIncByLE([ctrl], (xs, ys));
+    Controlled Add([ctrl], (xs, ys));
 }
 
 /// Computes ys -= xs by reducing problem to addition and using the Ripple-Carry adder.
@@ -16,7 +21,7 @@ operation Subtract(xs : Qubit[], ys : Qubit[]) : Unit is Adj + Ctl {
     for i in 0..ysLen-1 {
         X(ys[i]);
     }
-    Std.Arithmetic.RippleCarryTTKIncByLE(xs, ys);
+    Add(xs, ys);
     for i in 0..ysLen-1 {
         X(ys[i]);
     }
@@ -28,7 +33,7 @@ operation AddSub(ctrl : Qubit, xs : Qubit[], ys : Qubit[]) : Unit is Adj + Ctl {
     for i in 0..ysLen-1 {
         CNOT(ctrl, ys[i]);
     }
-    Std.Arithmetic.RippleCarryTTKIncByLE(xs, ys);
+    Add(xs, ys);
     for i in 0..ysLen-1 {
         CNOT(ctrl, ys[i]);
     }
@@ -41,7 +46,6 @@ operation AddSub(ctrl : Qubit, xs : Qubit[], ys : Qubit[]) : Unit is Adj + Ctl {
 ///  * 0 <= a < 2^n.
 ///  * 0 < b < 2^(n-1).
 ///  * c must be initialized to zeros.
-/// All numbers are little-endian.
 operation Divide_Restoring(a : Qubit[], b : Qubit[], c : Qubit[]) : Unit is Adj + Ctl {
     let n = Length(a);
     Fact(Length(b) == n, "Registers sizes must match.");
@@ -65,7 +69,6 @@ operation Divide_Restoring(a : Qubit[], b : Qubit[], c : Qubit[]) : Unit is Adj 
 ///  * 0 <= a < 2^n.
 ///  * 0 < b < 2^(n-1).
 ///  * c must be initialized to zeros.
-/// All numbers are little-endian.
 operation Divide_NonRestoring(a : Qubit[], b : Qubit[], c : Qubit[]) : Unit is Adj + Ctl {
     let n = Length(a);
     Fact(Length(b) == n, "Registers sizes are incompatible.");

@@ -37,7 +37,7 @@ operation TestFMAC(n : Int, a : Int, b_val : Int, x_val : Int) : Int {
         X(c);
         ApplyQFT(b);
     } apply {
-        QuantumArithmetic.PG2012.FMAC_Unoptimized(c, IntAsBigInt(a), x, b);
+        QuantumArithmetic.PG2012.FMAC(c, IntAsBigInt(a), x, b);
     }
 
     Fact(MeasureInteger(x) == x_val, "x was changed.");

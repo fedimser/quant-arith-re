@@ -4,10 +4,12 @@
       "src/QuantumArithmetic/AdditionStd.qs",
       "src/QuantumArithmetic/CDKM2004.qs",
       "src/QuantumArithmetic/CT2002.qs",
+      "src/QuantumArithmetic/DM2004.qs",
+      "src/QuantumArithmetic/PG2012.qs",
+      "src/QuantumArithmetic/PG2012Test.qs",
       "src/QuantumArithmetic/TMVH2019.qs",
       "src/QuantumArithmetic/TMVH2019Test.qs",
       "src/QuantumArithmetic/TR2009.qs",
-      "src/QuantumArithmetic/DM2004.qs",
       "src/Main.qs",
       "src/TestUtils.qs"
     ]

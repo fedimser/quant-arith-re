@@ -8,7 +8,8 @@ import Std.Convert.BigIntAsBoolArray;
 import Std.Convert.IntAsBigInt;
 import Std.Diagnostics.Fact;
 
-// Computes b += a*x, where b_f=QFT(b).
+// Adder (ΦADD) from §2.3.
+// Computes b+=a*x, where b_f=QFT(b).
 operation FADD(a : BigInt, b_f : Qubit[]) : Unit is Adj + Ctl {
     let n = Length(b_f);
     let a_bits = BigIntAsBoolArray(a, n);
@@ -22,7 +23,7 @@ operation FADD(a : BigInt, b_f : Qubit[]) : Unit is Adj + Ctl {
 }
 
 // Unoptimized Fourier Multiplier/Accumulator(ΦMAC) from §2.4.
-// Computes b += c*a*x, where b_f=QFT(b).
+// Computes b+=c*a*x, where b_f=QFT(b).
 operation FMAC_Unoptimized(c : Qubit, a : BigInt, x : Qubit[], b_f : Qubit[]) : Unit is Ctl {
     let n = Length(x);
     Fact(Length(b_f) == 2 * n, "b must have 2n bits.");
@@ -36,6 +37,12 @@ operation FMAC_Unoptimized(c : Qubit, a : BigInt, x : Qubit[], b_f : Qubit[]) : 
     }
 }
 
+// Optimized Fourier Multiplier/Accumulator(ΦMAC) from §3.
+// Computes b+=c*a*x, where b_f=QFT(b).
+operation FMAC(c : Qubit, a : BigInt, x : Qubit[], b_f : Qubit[]) : Unit is Ctl {
+    // TODO: implement optimized version.
+    FMAC_Unoptimized(c, a, x, b_f);
+}
 
 
-export FMAC_Unoptimized;
+export FMAC;

@@ -21,6 +21,24 @@ operation TestFADD(n : Int, a : Int, b_val : Int) : Int {
     return MeasureInteger(b);
 }
 
+// Computes a_val+b_val using FADD2 circuit.
+operation TestFADD2(n : Int, a_val : Int, b_val : Int) : Int {
+    Fact(a_val < (1 <<< n), "a<2^n");
+    Fact(b_val < (1 <<< n), "b<2^n");
+
+    use a = Qubit[n];
+    use b = Qubit[n];
+    ApplyPauliFromInt(PauliX, true, a_val, a);
+    ApplyPauliFromInt(PauliX, true, b_val, b);
+    within {
+        ApplyQFT(b);
+    } apply {
+        QuantumArithmetic.PG2012.FADD2(a, b);
+    }
+    Fact(MeasureInteger(a) == a_val, "a was changed.");
+    return MeasureInteger(b);
+}
+
 // Computes b_val+a*x_val using FMAC circuit (optimized and unoptimized).
 operation TestFMAC(n : Int, a : Int, b_val : Int, x_val : Int) : Int {
     Fact(a < (1 <<< n), "a<2^n");

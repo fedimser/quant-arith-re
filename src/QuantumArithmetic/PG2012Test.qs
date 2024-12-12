@@ -34,10 +34,9 @@ operation TestFMAC(n : Int, a : Int, b_val : Int, x_val : Int) : Int {
     ApplyPauliFromInt(PauliX, true, b_val, b);
     ApplyPauliFromInt(PauliX, true, x_val, x);
     within {
-        X(c);
         ApplyQFT(b);
     } apply {
-        QuantumArithmetic.PG2012.FMAC_Unoptimized(c, IntAsBigInt(a), x, b);
+        QuantumArithmetic.PG2012.FMAC_Unoptimized(IntAsBigInt(a), x, b);
     }
     Fact(MeasureInteger(x) == x_val, "x was changed.");
     let ans = MeasureInteger(b);
@@ -55,3 +54,19 @@ operation TestFMAC(n : Int, a : Int, b_val : Int, x_val : Int) : Int {
     return ans;
 }
 
+// a is 2n-bit number, b is n-bit number.
+// Returns pair (a_val/b_val, a_val%b_val).
+operation TestGMFDIV(n : Int, a_val : Int, b_val : Int) : (Int, Int) {
+    Fact(a_val>=0, "a>=0"); // Needed?
+    Fact(a_val< (1<<<(2*n)), "a<2^(2n)");
+    let q_true = a_val / b_val; 
+    Fact(q_true < (1<<<n), "q<2^n");
+
+    use a = Qubit[2*n];
+    use q = Qubit[n];
+    ApplyPauliFromInt(PauliX, true, a_val, a);
+    QuantumArithmetic.PG2012.GMFDIV2(a, IntAsBigInt(b_val), q);
+    let q_val = MeasureInteger(q);
+    let r_val = MeasureInteger(a);
+    return (q_val, r_val);
+}

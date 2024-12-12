@@ -23,7 +23,9 @@ def test_FADD(n: int):
 @pytest.mark.parametrize("n", [1, 2, 3, 4, 5])
 def test_FMAC(n: int):
     for _ in range(5):
-        a, b, x = [random.randint(0, 2**n-1) for _ in range(3)]
+        a = random.randint(-2**n, 2**n-1)
+        b = random.randint(0, 2**n-1)
+        x = random.randint(0, 2**n-1)
         print(n, a, b, x)
         t0 = time.time()
         ans = eval(f"QuantumArithmetic.PG2012Test.TestFMAC({n},{a},{b},{x})")

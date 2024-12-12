@@ -13,12 +13,12 @@ def setup():
 def test_FADD(n: int):
     for _ in range(5):
         a, b = random.randint(0, 2**n-1),  random.randint(0, 2**n-1)
-        t0 = time.time()
-        ans = eval(f"QuantumArithmetic.PG2012Test.TestFADD({n},{a},{b})")
-        print(n, time.time()-t0)
         expected = (a+b) % (2**n)
-        assert ans == expected
-
+        ans1 = eval(f"QuantumArithmetic.PG2012Test.TestFADD({n},{a},{b})")
+        assert ans1 == expected
+        ans2 = eval(f"QuantumArithmetic.PG2012Test.TestFADD2({n},{a},{b})")
+        assert ans2 == expected
+        
 
 @pytest.mark.parametrize("n", [1, 2, 3, 4, 5])
 def test_FMAC(n: int):

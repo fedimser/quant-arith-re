@@ -18,7 +18,7 @@ def test_FADD(n: int):
         assert ans1 == expected
         ans2 = eval(f"QuantumArithmetic.PG2012Test.TestFADD2({n},{a},{b})")
         assert ans2 == expected
-        
+
 
 @pytest.mark.parametrize("n", [1, 2, 3, 4, 5])
 def test_FMAC(n: int):
@@ -27,8 +27,16 @@ def test_FMAC(n: int):
         b = random.randint(0, 2**n-1)
         x = random.randint(0, 2**n-1)
         print(n, a, b, x)
-        t0 = time.time()
         ans = eval(f"QuantumArithmetic.PG2012Test.TestFMAC({n},{a},{b},{x})")
-        print(n, time.time()-t0)
         expected = (b+a*x) % (2**(2*n))
         assert ans == expected
+
+
+@pytest.mark.parametrize("n", [1, 2, 3, 4])
+def test_GMFDIV(n: int):
+    for _ in range(5):
+        b = random.randint(1, 2**n-1)
+        a = random.randint(0, (b*2**n)-1)
+        assert 0 <= a//b < 2**n
+        q, r = eval(f"QuantumArithmetic.PG2012Test.TestGMFDIV({n},{a},{b})")
+        assert (q, r) == (a//b, a % b)

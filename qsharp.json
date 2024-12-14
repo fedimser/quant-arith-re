@@ -10,7 +10,6 @@
       "src/QuantumArithmetic/TMVH2019.qs",
       "src/QuantumArithmetic/TMVH2019Test.qs",
       "src/QuantumArithmetic/TR2009.qs",
-      // "src/QuantumArithmetic/SC2023.qs",
       "src/QuantumArithmetic/WBC2023.qs",
       "src/QuantumArithmetic/HigherRadixUtils/BrentKungTree.qs",
       "src/QuantumArithmetic/HigherRadixUtils/HigherRadix.qs",

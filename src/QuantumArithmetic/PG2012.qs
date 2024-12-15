@@ -1,3 +1,6 @@
+import Std.Math.GreatestCommonDivisorL;
+import Std.Math.GreatestCommonDivisorI;
+import QuantumArithmetic.Utils.ParallelCNOT;
 /// Implementation of operations presented in paper:
 ///   Fast quantum modular exponentiation architecture for Shor's factoring algorithm
 ///   Archimedes Pavlidis and Dimitris Gizopoulos, 2012.
@@ -8,6 +11,8 @@ import Std.Arrays.*;
 import Std.Convert.*;
 import Std.Diagnostics.Fact;
 import Std.Math;
+
+import QuantumArithmetic.Utils;
 
 // Applies gate diag(1, exp(i*pi*n/2^k)).
 // Note: for algorithm implementation to be correct in principle, we need to
@@ -65,7 +70,8 @@ operation FMAC(a : BigInt, x : Qubit[], b_f : Qubit[]) : Unit is Ctl + Adj {
     }
 }
 
-function f(a : BigInt, n : Int, l : Int) : BigInt {
+// Computes phase of the gate W_l (formula 16 in the paper).
+function ComputeWPhase(a : BigInt, n : Int, l : Int) : BigInt {
     mutable phase : BigInt = 0L;
     for j in 0..Math.Min([l, n-1]) {
         set phase += (a % (1L <<< (l - j + 1))) <<< j;
@@ -103,19 +109,8 @@ operation ControlledFMAC(c : Qubit, a : BigInt, x : Qubit[], b_f : Qubit[]) : Un
     }
 
     for l in 0..(2 * n)-1 {
-        Controlled R1Precise([c], (f(a, n, l), l + 1, b_f[l]));
+        Controlled R1Precise([c], (ComputeWPhase(a, n, l), l + 1, b_f[l]));
     }
-}
-
-// Computes Floor(Log2(n)).
-function FloorLog2(n : BigInt) : Int {
-    mutable x : BigInt = n;
-    mutable ans : Int = 0;
-    while (x > 1L) {
-        set ans += 1;
-        set x = x >>> 1;
-    }
-    return ans;
 }
 
 // Part of division algorithm that needs to be uncomputed.
@@ -132,7 +127,7 @@ operation DIV_Prepare(
 ) : Unit is Ctl + Adj {
     // Initialization steps (§4.2, lines 1, 2, 3, of Algorithm).
     let n = Length(Reg2);
-    let l : Int = 1 + FloorLog2(d);
+    let l : Int = 1 + Utils.FloorLog2(d);
     Fact(1L <<< (l-1) <= d, "2^(l-1)<=d");
     Fact(d < 1L <<< l, "d<2^l");
     let m1 : BigInt = ((1L <<< n) * ((1L <<< l)-d)-1L) / d;
@@ -168,9 +163,7 @@ operation DIV_Prepare(
         FMAC(m1, Reg4, Reg6 + Reg5);
     }
     // Here (Reg6+Reg5) = nadj+m1*(n2+n1).
-    for i in 0..n-1 {
-        CNOT(Reg5[i], Reg2[i]);
-    }
+    Utils.ParallelCNOT(Reg5, Reg2);
     within {
         ApplyQFT(Reg2);
     } apply {
@@ -180,6 +173,9 @@ operation DIV_Prepare(
     // Here Reg2=q1.
 }
 
+// Division by constant d.
+// (Reg1+Reg0) constains 2n-qubit dividend z.
+// In the end, Reg0=0, Reg1=(z%d), Reg2=z/d.
 operation GMFDIV(Reg0 : Qubit[], Reg1 : Qubit[], Reg2 : Qubit[], d : BigInt, type : Int) : Unit is Ctl + Adj {
     let n = Length(Reg0);
     Fact(Length(Reg1) == n, "Size mismatch.");
@@ -193,9 +189,7 @@ operation GMFDIV(Reg0 : Qubit[], Reg1 : Qubit[], Reg2 : Qubit[], d : BigInt, typ
     use Aqbit = Qubit();
 
     DIV_Prepare(Reg0, Reg1, Reg2, Reg4, Reg5, Reg6, Aqbit, d, type);
-    for i in 0..n-1 {
-        CNOT(Reg2[i], Reg3[i]);
-    }
+    Utils.ParallelCNOT(Reg2, Reg3);
 
     // Computation of dr (§4.2, line 9 of Algorithm).
     within {
@@ -256,5 +250,63 @@ operation GMFDIV2(z : Qubit[], d : BigInt, q : Qubit[]) : Unit is Ctl + Adj {
     GMFDIV(z[n..2 * n-1], z[0..n-1], q, d, 2);
 }
 
+// Optimized controlled modular multiplier/accumulator (ΦMAC_MOD1, §5.2).
+// Computes ans := (a*y)%N if c=1, does nothing if c=0.
+// ans must have n qubits and be prepared in zero state.
+// Doesn't change y.
+// It must be guaranteed that N<2^n; (a*y)/N < 2^n.
+operation FMAC_MOD2(
+    c : Qubit,
+    y : Qubit[],
+    ans : Qubit[],
+    a : BigInt,
+    N : BigInt
+) : Unit is Ctl + Adj {
+    let n = Length(y);
+    Fact(0L <= a and a < (1L <<< n), "a out of bounds.");
+    Fact(1L <= N and N < (1L <<< n), "N out of bounds.");
+    Fact(Length(ans) == n, "Size mismatch.");
+    use anc1 = Qubit[n];
+    use anc2 = Qubit[n];
+    use anc3 = Qubit[n];
 
-export FMAC, GMFDIV1, GMFDIV2;
+    within {
+        ApplyQFT(ans + anc1);
+    } apply {
+        ControlledFMAC(c, a, y, ans + anc1);
+    }
+    GMFDIV2(ans + anc1, N, anc3);
+    // Here anc1=0, ans=(c*a*y)%N, anc3=(c*a*y)/N.
+
+    ParallelCNOT(ans, anc2);
+
+    Adjoint GMFDIV2(anc2 + anc1, N, anc3);
+    within {
+        ApplyQFT(anc2 + anc1);
+    } apply {
+        Adjoint ControlledFMAC(c, a, y, anc2 + anc1);
+    }
+}
+
+// Modular exponentiation. (ΦMUL MOD2, §6).
+// Computes y:=(a*y)%N ig c=1. Does nothing if c=0.
+// It must be guaranteed that N<2^n; (a*y)/N < 2^n; a is co-prime with N.
+operation FMUL_MOD2(c : Qubit, y : Qubit[], a : BigInt, N : BigInt) : Unit {
+    Fact(Math.IsCoprimeL(a, N), "a and N must be coprime.");
+    let (a_inv, unused_v) = Math.ExtendedGreatestCommonDivisorL(a, N);
+    let a_inv : BigInt = ((a_inv % N)+N)%N;
+    Fact(1L <= a_inv and a_inv < N, "a_inv out of bound");
+    Fact((a * a_inv) % N == 1L, "a_inv is computed incorrectly");
+    Message($"a_inv={a_inv}");    
+
+    let n = Length(y);
+    use ans = Qubit[n];
+
+    FMAC_MOD2(c, y, ans, a, N);
+    for i in 0..n-1 {
+        Controlled SWAP([c], (y[i], ans[i]));
+    }
+    Adjoint FMAC_MOD2(c, y, ans, a_inv, N);
+}
+
+export FMAC, GMFDIV1, GMFDIV2, FMAC_MOD2, FMUL_MOD2;

@@ -1,7 +1,7 @@
 import pytest
 from qsharp import init, eval
 import random
-import time
+import math
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -40,3 +40,21 @@ def test_GMFDIV(n: int):
         assert 0 <= a//b < 2**n
         q, r = eval(f"QuantumArithmetic.PG2012Test.TestGMFDIV({n},{a},{b})")
         assert (q, r) == (a//b, a % b)
+
+
+@pytest.mark.parametrize("n,mod", [(2, 3), (3, 6), (3, 7), (4, 13)])
+def test_MACMOD(n: int, mod: int):
+    assert 1 <= mod < 2**n
+    for _ in range(5 if n <= 3 else 1):
+        a = random.randint(1, mod-1)
+        b_max = min(2**n, int(math.ceil(2**n*mod/a)))-1
+        b = random.randint(0, b_max)
+        ans = eval(
+            f"QuantumArithmetic.PG2012Test.TestFMAC_MOD2({n},{a},{b},{mod})")
+        assert ans == (a*b) % mod
+
+
+def test_MULMOD():
+    for i in range(1, 7):
+        ans = eval(f"QuantumArithmetic.PG2012Test.TestFMUL_MOD2(3,5,{i},7)")
+        assert ans == (i*5) % 7

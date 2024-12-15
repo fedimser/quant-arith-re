@@ -54,7 +54,13 @@ def test_MACMOD(n: int, mod: int):
         assert ans == (a*b) % mod
 
 
-def test_MULMOD():
+def test_MUL_MOD():
     for i in range(1, 7):
         ans = eval(f"QuantumArithmetic.PG2012Test.TestFMUL_MOD2(3,5,{i},7)")
         assert ans == (i*5) % 7
+
+
+@pytest.mark.parametrize("n,a,b,mod", [(2, 2, 2, 3), (3, 6, 5, 7)])
+def test_EXP_MOD(n, a, b, mod):
+    ans = eval(f"QuantumArithmetic.PG2012Test.TestEXP_MOD({n},{a},{b},{mod})")
+    assert ans == (a**b) % mod

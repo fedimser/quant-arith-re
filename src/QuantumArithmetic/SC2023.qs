@@ -1,6 +1,6 @@
-import Std.ResourceEstimation.AuxQubitCount;
 // Quantum Adder using Ling Structure
 // https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=10321948&tag=1
+import Std.ResourceEstimation.AuxQubitCount;
 import Std.Diagnostics.Fact;
 open Microsoft.Quantum.Intrinsic;
 open Microsoft.Quantum.Arrays;
@@ -17,41 +17,53 @@ open Microsoft.Quantum.Arrays;
 operation Add(A : Qubit[], B : Qubit[], pl: Qubit[], Z: Qubit) : Unit is Adj + Ctl {
     let n = Length(A);
     Fact(Length(B) == n, "Registers sizes must match.");
-
     use gl = Qubit[n];
-    use p_1 = Qubit[n - 2]; // p_0 = p_1 = pl_0/0
+    use p_1 = Qubit[n - 1]; // p_0 = p_1 = pl_0/0
     use g_1 = Qubit[n - 1]; // g_0 = gl_0
-    Precalculation(A, B, pl, gl, p_1, g_1);
-    mutable p = [pl[0], pl[1]] + p_1;
+    use accilla = Qubit[n * 3];
+    mutable p = [pl[0]] + p_1;
     mutable g = [gl[0]] + g_1;
-
-    use accilla = Qubit[n-1];
-    use intermediate = Qubit[n-2];
-
-    if (n == 5){
-        PropagateG(g[3], p[2], g[0], accilla[0], intermediate[0]);
-        PropagateG(g[4], p[3], intermediate[0], accilla[1], intermediate[1]);
-        PropagateP(p[3], p[2], accilla[2]);
-        PropagateG(g[2], p[4], g[0], accilla[3], intermediate[2]);
+    for i in 0..n-1 {
+        Step1(A[i], B[i], gl[i], pl[i]);
     }
-    let h = [g[0], g[1], intermediate[0], intermediate[2], intermediate[1]];
-    // PropagateG(g[0], p[1], g[2], accilla[0], h[2]);
-    // PropagateG(g[1], p[2], g[3], accilla[1], h[3]);
+    within{
+        // step 2
+        for i in 0..n-2 {
+            Step2(pl[i], pl[i+1], gl[i], gl[i+1], p_1[i], g_1[i]);
+        }
 
+        // if (n == 5){
+        //     PropagateG(g[3], p[2], g[0], accilla[0], accilla[4]);
+        //     PropagateG(g[4], p[3], accilla[4], accilla[1], accilla[5]);
+        //     PropagateP(p[3], p[2], accilla[2]);
+        //     PropagateG(g[2], p[4], g[0], accilla[3], accilla[6]);
+        //     let h = [g[0], g[1], accilla[4], accilla[6], accilla[5]];
+        // } else { // n == 4
+            // PropagateG(g[0], p[1], g[2], accilla[0], accilla[2]);
+            // PropagateG(g[1], p[2], g[3], accilla[1], accilla[3]);
+        // }
+        LingBrentKung(g, p, accilla);
+        // }
     // BKTreePropagation(g, p, h, accilla);
-    Summation(h, p, B, Z);
-
-    if (n == 5){
-        PropagateG_uncompute(g[2], p[4], g[0], accilla[3], intermediate[2]);
-        PropagateP_uncompute(p[3], p[2], accilla[2]);
-        PropagateG_uncompute(g[4], p[3], intermediate[0], accilla[1], intermediate[1]);
-        PropagateG_uncompute(g[3], p[2], g[0], accilla[0], intermediate[0]);
+    } apply {
+        // let h = [g_1[0], g_1[1], accilla[2], accilla[3]];
+        Summation(g, pl, B, Z);
+    }
+    for i in 0..n-1 {
+        Step1_uncompute(A[i], B[i], gl[i], pl[i]);
     }
 
-    // BKTreePropagation_uncompute(g, p, h, accilla);
-    // PropagateG_uncompute(g[1], p[2], g[3], accilla[1], h[3]);
-    // PropagateG_uncompute(g[0], p[1], g[2], accilla[0], h[2]);
-    Precalculation_uncompute(A, B, pl, gl, p_1, g_1);
+    // if (n == 5){
+    //     PropagateG_uncompute(g[2], p[4], g[0], accilla[3], intermediate[2]);
+    //     PropagateP_uncompute(p[3], p[2], accilla[2]);
+    //     PropagateG_uncompute(g[4], p[3], intermediate[0], accilla[1], accilla[5]);
+    //     PropagateG_uncompute(g[3], p[2], g[0], accilla[0], intermediate[0]);
+    // }
+
+    // // BKTreePropagation_uncompute(g, p, h, accilla);
+    // // PropagateG_uncompute(g[1], p[2], g[3], accilla[1], h[3]);
+    // // PropagateG_uncompute(g[0], p[1], g[2], accilla[0], h[2]);
+    // Precalculation_uncompute(A, B, pl, gl, p_1, g_1);
 }
 
 // step 1: 
@@ -87,18 +99,9 @@ operation Step2(pl_i: Qubit, pl_i1: Qubit, gl_i: Qubit, gl_i1: Qubit, p_i: Qubit
         ORGate(gl_i, gl_i1, g_i);
 }
 
-operation Precalculation(A : Qubit[], B : Qubit[], pl : Qubit[], gl : Qubit[], p : Qubit[], g : Qubit[]) : Unit is Adj + Ctl {
-    let n = Length(A);
-    // step 1
-    for i in 0..n-1 {
-        Step1(A[i], B[i], gl[i], pl[i]);
-    }
-    // step 2
-    for i in 0..n-3 {
-        Step2(pl[i], pl[i+1], gl[i], gl[i+1], p[i], g[i]);
-    }
-    ORGate(gl[n-2], gl[n-1], g[n-2]);
-}
+// operation Precalculation(A : Qubit[], B : Qubit[], pl : Qubit[], gl : Qubit[], p : Qubit[], g : Qubit[]) : Unit is Adj + Ctl {
+
+// }
 
 // step 3:
 // (g_x, p_x-1) O (g_y, p_y-1) = (g_x + p_x-1 * g_y, p_x-1 * p_y-1)
@@ -129,6 +132,7 @@ function BKTree(bitWidth : Int) : Int[][] {
     let bitwidth_i = bitWidth - 1;
     mutable matrix = Repeated(Repeated(-1, bitwidth_i), bitwidth_i);
     let log2BitWidth = BitLength(bitwidth_i);
+    mutable nitems = 0;
     for idxRow in 0 .. log2BitWidth - 1 {
         mutable row = matrix[idxRow];
         let shiftLength = 2 <<< idxRow;
@@ -141,6 +145,7 @@ function BKTree(bitWidth : Int) : Int[][] {
             let val = startingValue + i * shiftLength;
             if idx < bitwidth_i {
                 set row w/= idx <- val;
+                set nitems += 1;
             }
         }
         set matrix w/= idxRow <- row;
@@ -156,13 +161,61 @@ function BKTree(bitWidth : Int) : Int[][] {
             let val = valuesStart + i * shift;
             if idx < bitwidth_i {
                 set row w/= idx <- val;
+                set nitems += 1;
             }
         }
         set matrix w/= bitwidth_i - idxRow <- row;
     }
     return matrix;
+    // for non -1 values in matrix, add them to a list  
 }
 
+operation BrentKung(gNumber : Qubit[], pNumber : Qubit[], acillas : Qubit[]) : Unit is Adj + Ctl {
+    let bitNum = Length(gNumber);
+    let BKMatrix = BKTree(bitNum);
+    Message($"{BKMatrix}");
+    mutable use_acilla = 0;
+    mutable p_location_x = 0;
+    for i in 0 ..bitNum - 2 {
+        mutable row = BKMatrix[i];
+        for j in 0 .. bitNum - 2 {
+            if row[j] != -1 {
+                let indexNow = j + 1;
+                let acillaOffset = (i * bitNum/2 + j) * 3;
+                // Use PropagateG for G propagation
+                PropagateG(
+                    gNumber[indexNow],
+                    pNumber[indexNow],
+                    gNumber[BKMatrix[i][j]],
+                    acillas[acillaOffset + 0],
+                    acillas[acillaOffset + 1]
+                );
+                SWAP(gNumber[indexNow], acillas[acillaOffset + 1]);
+                // Use PropagateP for P propagation
+                PropagateP(
+                    pNumber[indexNow],
+                    pNumber[BKMatrix[i][j]],
+                    acillas[acillaOffset + 2]
+                );
+                SWAP(pNumber[indexNow], acillas[acillaOffset + 2]);
+            }
+        }
+    }
+}
+/// Function to implement Ling-based Brent-Kung tree
+operation LingBrentKung(gNumber : Qubit[], pNumber : Qubit[], acillas : Qubit[]) : Unit is Adj + Ctl {
+    let bitWidth = Length(gNumber);
+    mutable indexBK1: Range = 0..2..bitWidth - 1;
+    mutable indexBK2: Range = 1..2..bitWidth - 1;
+
+    mutable gBK1 = gNumber[indexBK1];
+    mutable pBK1 = pNumber[indexBK1];
+    mutable gBK2 = gNumber[indexBK2];
+    mutable pBK2 = pNumber[indexBK2];
+
+    BrentKung(gBK1, pBK1, acillas);
+    BrentKung(gBK2, pBK2, acillas);
+}
 operation Summation(h: Qubit[], p: Qubit[], d: Qubit[], Z: Qubit) : Unit is Adj + Ctl {
     let n = Length(h);
     Fact(Length(p) == n, "The length of p must match the bit width.");
@@ -174,36 +227,36 @@ operation Summation(h: Qubit[], p: Qubit[], d: Qubit[], Z: Qubit) : Unit is Adj 
     CCNOT(h[n-1], p[n-1], Z);
 }
 
-operation BKTreePropagation_uncompute(g: Qubit[], p: Qubit[], h: Qubit[], acilla: Qubit[]) : Unit is Adj + Ctl {
-    let n = Length(g);
-    let nlevel = BitLength(n-1);
-    for i in nlevel-1..-1..0 {
-        let shift_length = 2^(i + 1);
-        let start_idx = shift_length - 2;
-        for j in n-shift_length-1..-1..start_idx {
-            let px = p[j + shift_length - 1];
-            let gx = g[j + shift_length];
-            let gy = g[j];
-            PropagateG_uncompute(gy,  px, gx, acilla[j], h[j + shift_length]);
-            // PropagateP(px, py, acilla2);
-        }
-    }
-}
+// operation BKTreePropagation_uncompute(g: Qubit[], p: Qubit[], h: Qubit[], acilla: Qubit[]) : Unit is Adj + Ctl {
+//     let n = Length(g);
+//     let nlevel = BitLength(n-1);
+//     for i in nlevel-1..-1..0 {
+//         let shift_length = 2^(i + 1);
+//         let start_idx = shift_length - 2;
+//         for j in n-shift_length-1..-1..start_idx {
+//             let px = p[j + shift_length - 1];
+//             let gx = g[j + shift_length];
+//             let gy = g[j];
+//             PropagateG_uncompute(gy,  px, gx, acilla[j], h[j + shift_length]);
+//             // PropagateP(px, py, acilla2);
+//         }
+//     }
+// }
 
-operation PropagateG_uncompute(gi: Qubit, pii: Qubit, giii: Qubit, acilla0: Qubit, acilla1: Qubit) : Unit is Adj + Ctl {
-    // Calculate px_gy and new_p using Toffoli gate
-    ORGate(giii, acilla0, acilla1);
-    CCNOT(gi, pii, acilla0);
-}
+// operation PropagateG_uncompute(gi: Qubit, pii: Qubit, giii: Qubit, acilla0: Qubit, acilla1: Qubit) : Unit is Adj + Ctl {
+//     // Calculate px_gy and new_p using Toffoli gate
+//     ORGate(giii, acilla0, acilla1);
+//     CCNOT(gi, pii, acilla0);
+// }
 
-operation PropagateP_uncompute(px: Qubit, py: Qubit, acilla2: Qubit) : Unit is Adj + Ctl {
-    CCNOT(py, px, acilla2);
-}
+// operation PropagateP_uncompute(px: Qubit, py: Qubit, acilla2: Qubit) : Unit is Adj + Ctl {
+//     CCNOT(py, px, acilla2);
+// }
 
-operation Step2_uncompute(pl_i: Qubit, pl_i1: Qubit, gl_i: Qubit, gl_i1: Qubit, p_i: Qubit, g_i: Qubit) : Unit is Adj + Ctl {
-    ORGate(gl_i, gl_i1, g_i);
-    CCNOT(pl_i, pl_i1, p_i);
-}
+// operation Step2_uncompute(pl_i: Qubit, pl_i1: Qubit, gl_i: Qubit, gl_i1: Qubit, p_i: Qubit, g_i: Qubit) : Unit is Adj + Ctl {
+//     ORGate(gl_i, gl_i1, g_i);
+//     CCNOT(pl_i, pl_i1, p_i);
+// }
 
 operation Step1_uncompute(a : Qubit, b : Qubit, gl : Qubit, pl : Qubit) : Unit is Adj + Ctl {
     CNOT(gl, pl);
@@ -211,89 +264,34 @@ operation Step1_uncompute(a : Qubit, b : Qubit, gl : Qubit, pl : Qubit) : Unit i
     CCNOT(a, pl, gl);
 }
 
-operation Precalculation_uncompute(A : Qubit[], B : Qubit[], pl : Qubit[], gl : Qubit[], p : Qubit[], g : Qubit[]) : Unit is Adj + Ctl {
-    let n = Length(A);
-    ORGate(gl[n-2], gl[n-1], g[n-2]);
-    for i in n-2..-1..1 {
-        Step2_uncompute(pl[i], pl[i-1], gl[i], gl[i-1], p[i-1], g[i-1]);
-    }
-    for i in 0..n-1 {
-        Step1_uncompute(A[i], B[i], gl[i], pl[i]);
-    }
-}
+// operation Precalculation_uncompute(A : Qubit[], B : Qubit[], pl : Qubit[], gl : Qubit[], p : Qubit[], g : Qubit[]) : Unit is Adj + Ctl {
+//     let n = Length(A);
+//     ORGate(gl[n-2], gl[n-1], g[n-2]);
+//     for i in n-2..-1..1 {
+//         Step2_uncompute(pl[i], pl[i-1], gl[i], gl[i-1], p[i-1], g[i-1]);
+//     }
+//     for i in 0..n-1 {
+//         Step1_uncompute(A[i], B[i], gl[i], pl[i]);
+//     }
+// }
 
-operation BrentKung(gNumber : Qubit[], pNumber : Qubit[], acillas : Qubit[]) : Unit {
-    let bitNum = Length(gNumber);
-    let BKMatrix = BKTree(bitNum);
-    mutable use_acilla = 0;
-    mutable p_location_x = 0;
-    for i in 0 ..bitNum - 1 {
-        mutable row = BKMatrix[i];
-        for j in 0 .. bitNum - 1 {
-            if row[j] != -1 {
-                let indexNow = j + 1;
+// operation BKTreePropagation(g: Qubit[], p: Qubit[], h: Qubit[], acilla: Qubit[]) : Unit is Adj + Ctl {
 
-                // Use PropagateG for G propagation
-                PropagateG(
-                    gNumber[indexNow],
-                    pNumber[indexNow],
-                    gNumber[BKMatrix[i][j]],
-                    acillas[use_acilla],
-                    acillas[use_acilla + 1]
-                );
-                set gNumber[indexNow] = acillas[use_acilla + 1];
+//     let n = Length(g);
+//     Fact(Length(p) == n, "The length of p must match the bit width.");
+//     let nlevel = BitLength(n-1);
+//     mutable next_level_p = p;
+//     mutable next_level_g = g;
+//     for i in 0..nlevel-1 {
+//         let shift_length = 2^(i + 1);
+//         let start_idx = shift_length - 2;
+//         for j in start_idx..n-shift_length-1{
+//             let px = p[j + shift_length - 1];
+//             let gx = g[j + shift_length];
+//             let gy = g[j];
+//             PropagateG(gy, px, gx, acilla[j], h[j + shift_length]);
+//             // PropagateP(px, py, acilla2);
+//         }
+//     }
+// }
 
-                // Use PropagateP for P propagation
-                PropagateP(
-                    pNumber[indexNow],
-                    pNumber[BKMatrix[i][j]],
-                    acillas[use_acilla + 2]
-                );
-                set pNumber[indexNow] = acillas[use_acilla + 2];
-                set use_acilla += 3;
-            }
-        }
-    }
-}
-
-operation BKTreePropagation(g: Qubit[], p: Qubit[], h: Qubit[], acilla: Qubit[]) : Unit is Adj + Ctl {
-
-    let n = Length(g);
-    Fact(Length(p) == n, "The length of p must match the bit width.");
-    let nlevel = BitLength(n-1);
-    mutable next_level_p = p;
-    mutable next_level_g = g;
-    for i in 0..nlevel-1 {
-        let shift_length = 2^(i + 1);
-        let start_idx = shift_length - 2;
-        for j in start_idx..n-shift_length-1{
-            let px = p[j + shift_length - 1];
-            let gx = g[j + shift_length];
-            let gy = g[j];
-            PropagateG(gy, px, gx, acilla[j], h[j + shift_length]);
-            // PropagateP(px, py, acilla2);
-        }
-    }
-}
-
-    /// Function to implement Ling-based Brent-Kung tree
-operation LingBrentKung(gNumber : Qubit[], pNumber : Qubit[], acillas : Qubit[]) : Unit {
-    let bitWidth = Length(gNumber);
-    // let indexBK1 =  range(0,bit_num,2)
-    // let indexBK2 = range(1, bit_num, 2)
-    mutable indexBK1 = Qubit[bitWidth];
-    mutable indexBK2 = [];
-
-    Brent_Kung(gNumber[indexBK1], pNumber[indexBK1]);
-    Brent_Kung(g_BK_1, p_BK_1)
-    let gBK1 = [gNumber[i] | i in indexBK1];
-    let pBK1 = [pNumber[i] | i in indexBK1];
-    let gBK2 = [gNumber[i] | i in indexBK2];
-    let pBK2 = [pNumber[i] | i in indexBK2];
-
-    // Process BK1 group
-    BrentKung(gBK1, pBK1, acillas);
-
-    // Process BK2 group
-    BrentKung(gBK2, pBK2, acillas);
-}

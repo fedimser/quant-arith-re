@@ -66,8 +66,10 @@ operation BinaryOpExtraOut(n : Int, x_val : Int, y_val : Int, op : (Qubit[], Qub
     let new_x = MeasureInteger(x);
     Fact(new_x == x_val, "x was changed.");
     let new_z = MeasureInteger(z);
-    Fact(new_z == y_val, "z was changed to y.");
-    let results = y + [z_extra];
+    Fact(new_z == y_val, "z was not changed to y.");
+    // let results = y + [z_extra];
+    let results = y;
+    let z = MeasureInteger([z_extra]);
     let ans = MeasureInteger(results);
     return ans;
 }

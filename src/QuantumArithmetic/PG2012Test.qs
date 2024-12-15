@@ -10,7 +10,7 @@ import Std.Diagnostics.Fact;
 operation TestFADD(n : Int, a : Int, b_val : Int) : Int {
     Fact(a < (1 <<< n), "a<2^n");
     Fact(b_val < (1 <<< n), "b<2^n");
-    
+
     use b = Qubit[n];
     ApplyPauliFromInt(PauliX, true, b_val, b);
     within {
@@ -54,7 +54,7 @@ operation TestFMAC(n : Int, a : Int, b_val : Int, x_val : Int) : Int {
     within {
         ApplyQFT(b);
     } apply {
-        QuantumArithmetic.PG2012.FMAC_Unoptimized(IntAsBigInt(a), x, b);
+        QuantumArithmetic.PG2012.FMAC(IntAsBigInt(a), x, b);
     }
     Fact(MeasureInteger(x) == x_val, "x was changed.");
     let ans = MeasureInteger(b);
@@ -65,7 +65,7 @@ operation TestFMAC(n : Int, a : Int, b_val : Int, x_val : Int) : Int {
         X(c);
         ApplyQFT(b);
     } apply {
-        QuantumArithmetic.PG2012.FMAC(c, IntAsBigInt(a), x, b);
+        QuantumArithmetic.PG2012.ControlledFMAC(c, IntAsBigInt(a), x, b);
     }
     Fact(MeasureInteger(x) == x_val, "x was changed.");
     Fact(MeasureInteger(b) == ans, "Answers don't match.");
@@ -75,12 +75,12 @@ operation TestFMAC(n : Int, a : Int, b_val : Int, x_val : Int) : Int {
 // a is 2n-bit number, b is n-bit number.
 // Returns pair (a_val/b_val, a_val%b_val).
 operation TestGMFDIV(n : Int, a_val : Int, b_val : Int) : (Int, Int) {
-    Fact(a_val>=0, "a>=0"); // Needed?
-    Fact(a_val< (1<<<(2*n)), "a<2^(2n)");
-    let q_true = a_val / b_val; 
-    Fact(q_true < (1<<<n), "q<2^n");
+    Fact(a_val >= 0, "a>=0"); // Needed?
+    Fact(a_val < (1 <<< (2 * n)), "a<2^(2n)");
+    let q_true = a_val / b_val;
+    Fact(q_true < (1 <<< n), "q<2^n");
 
-    use a = Qubit[2*n];
+    use a = Qubit[2 * n];
     use q = Qubit[n];
     ApplyPauliFromInt(PauliX, true, a_val, a);
     QuantumArithmetic.PG2012.GMFDIV2(a, IntAsBigInt(b_val), q);

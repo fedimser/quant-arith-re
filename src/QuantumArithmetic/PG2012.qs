@@ -40,7 +40,7 @@ operation FADD(a : BigInt, b_f : Qubit[]) : Unit is Ctl + Adj {
 
 operation PhaseGradient(qs : Qubit[]) : Unit is Adj + Ctl {
     for i in IndexRange(qs) {
-        R1Frac(1, i, qs[i]);
+        R1Precise(1L, i, qs[i]);
     }
 }
 
@@ -55,7 +55,7 @@ operation FADD2(a : Qubit[], b_f : Qubit[]) : Unit is Ctl + Adj {
 
 // Unoptimized Fourier Multiplier/Accumulator(ΦMAC) from §2.4.
 // Computes b+=a*x, where b_f=QFT(b).
-operation FMAC_Unoptimized(a : BigInt, x : Qubit[], b_f : Qubit[]) : Unit is Ctl + Adj {
+operation FMAC(a : BigInt, x : Qubit[], b_f : Qubit[]) : Unit is Ctl + Adj {
     let n = Length(x);
     Fact(Length(b_f) == 2 * n, "b must have 2n bits.");
     Fact(a < (1L <<< n), "a must have at most n bits.");
@@ -65,9 +65,17 @@ operation FMAC_Unoptimized(a : BigInt, x : Qubit[], b_f : Qubit[]) : Unit is Ctl
     }
 }
 
-// Optimized Fourier Multiplier/Accumulator(ΦMAC) from §3.
+function f(a : BigInt, n : Int, l : Int) : BigInt {
+    mutable phase : BigInt = 0L;
+    for j in 0..Math.Min([l, n-1]) {
+        set phase += (a % (1L <<< (l - j + 1))) <<< j;
+    }
+    return phase;
+}
+
+// Optimized controlled Fourier Multiplier/Accumulator(ΦMAC) from §3.
 // Computes b+=c*a*x, where b_f=QFT(b).
-operation FMAC(c : Qubit, a : BigInt, x : Qubit[], b_f : Qubit[]) : Unit is Ctl {
+operation ControlledFMAC(c : Qubit, a : BigInt, x : Qubit[], b_f : Qubit[]) : Unit is Ctl + Adj {
     let n = Length(x);
     Fact(Length(b_f) == 2 * n, "b must have 2n bits.");
     Fact(a < (1L <<< n), "a must have at most n bits.");
@@ -95,14 +103,11 @@ operation FMAC(c : Qubit, a : BigInt, x : Qubit[], b_f : Qubit[]) : Unit is Ctl 
     }
 
     for l in 0..(2 * n)-1 {
-        mutable phase : BigInt = 0L;
-        for j in 0..Math.Min([l, n-1]) {
-            set phase += (a % (1L <<< (l - j + 1))) <<< j;
-        }
-        Controlled R1Precise([c], (phase, l + 1, b_f[l]));
+        Controlled R1Precise([c], (f(a, n, l), l + 1, b_f[l]));
     }
 }
 
+// Computes Floor(Log2(n)).
 function FloorLog2(n : BigInt) : Int {
     mutable x : BigInt = n;
     mutable ans : Int = 0;
@@ -113,6 +118,7 @@ function FloorLog2(n : BigInt) : Int {
     return ans;
 }
 
+// Part of division algorithm that needs to be uncomputed.
 operation DIV_Prepare(
     Reg0 : Qubit[],
     Reg1 : Qubit[],
@@ -121,7 +127,8 @@ operation DIV_Prepare(
     Reg5 : Qubit[],
     Reg6 : Qubit[],
     Aqbit : Qubit,
-    d : BigInt
+    d : BigInt,
+    type : Int,
 ) : Unit is Ctl + Adj {
     // Initialization steps (§4.2, lines 1, 2, 3, of Algorithm).
     let n = Length(Reg2);
@@ -135,8 +142,9 @@ operation DIV_Prepare(
     // Computation of n2, n10, n1 (§4.2, lines 4, 5, 6 of Algorithm).
     ApplyQFT(Reg4);
     ApplyQFT(Reg6);
-    // TODO: Line below is not needed if input is n-bit (i.e. Reg0=0).
-    FADD2(Reg5[0..n-l-1] + Reg0[0..l-1], Reg4);   // Reg4+=SLL(Reg0,n-l).
+    if (type == 2) {
+        FADD2(Reg5[0..n-l-1] + Reg0[0..l-1], Reg4);   // Reg4+=SLL(Reg0,n-l).
+    }
     FADD2(Reg5[0..n-l-1] + Reg1[0..l-1], Reg6);   // Reg6+=SLL(Reg1,n-l).
     FADD2(Reg1[l..n-1] + Reg5[n-l..n-1], Reg4);   // Reg4+=SRL(Reg1,l).
     Adjoint ApplyQFT(Reg6);
@@ -157,7 +165,7 @@ operation DIV_Prepare(
     within {
         ApplyQFT(Reg6 + Reg5);
     } apply {
-        FMAC_Unoptimized(m1, Reg4, Reg6 + Reg5);
+        FMAC(m1, Reg4, Reg6 + Reg5);
     }
     // Here (Reg6+Reg5) = nadj+m1*(n2+n1).
     for i in 0..n-1 {
@@ -172,7 +180,7 @@ operation DIV_Prepare(
     // Here Reg2=q1.
 }
 
-operation GMFDIV(Reg0 : Qubit[], Reg1 : Qubit[], Reg2 : Qubit[], d : BigInt) : Unit {
+operation GMFDIV(Reg0 : Qubit[], Reg1 : Qubit[], Reg2 : Qubit[], d : BigInt, type : Int) : Unit is Ctl + Adj {
     let n = Length(Reg0);
     Fact(Length(Reg1) == n, "Size mismatch.");
     Fact(Length(Reg2) == n, "Size mismatch.");
@@ -184,16 +192,16 @@ operation GMFDIV(Reg0 : Qubit[], Reg1 : Qubit[], Reg2 : Qubit[], d : BigInt) : U
     use Reg6 = Qubit[n];
     use Aqbit = Qubit();
 
-    DIV_Prepare(Reg0, Reg1, Reg2, Reg4, Reg5, Reg6, Aqbit, d);
+    DIV_Prepare(Reg0, Reg1, Reg2, Reg4, Reg5, Reg6, Aqbit, d, type);
     for i in 0..n-1 {
         CNOT(Reg2[i], Reg3[i]);
     }
-    
+
     // Computation of dr (§4.2, line 9 of Algorithm).
     within {
         ApplyQFT(Reg1 + Reg0);
     } apply {
-        FMAC_Unoptimized(-d, Reg2, Reg1 + Reg0);
+        FMAC(-d, Reg2, Reg1 + Reg0);
         FADD(-d, Reg1 + Reg0);
     }
     // Here (Reg1+Reg0)=dr.
@@ -212,17 +220,17 @@ operation GMFDIV(Reg0 : Qubit[], Reg1 : Qubit[], Reg2 : Qubit[], d : BigInt) : U
         ApplyQFT(Reg1 + Reg0);
     } apply {
         FADD(d, Reg1 + Reg0);
-        FMAC_Unoptimized(d, Reg3, Reg1 + Reg0);
+        FMAC(d, Reg3, Reg1 + Reg0);
     }
 
     // Ancilla Restoration (§4.3).
-    Adjoint DIV_Prepare(Reg0, Reg1, Reg3, Reg4, Reg5, Reg6, Aqbit, d);
+    Adjoint DIV_Prepare(Reg0, Reg1, Reg3, Reg4, Reg5, Reg6, Aqbit, d, type);
 
     // Computation of the remainder r (second part).
     within {
         ApplyQFT(Reg1 + Reg0);
     } apply {
-        FMAC_Unoptimized(-d, Reg2, Reg1 + Reg0);
+        FMAC(-d, Reg2, Reg1 + Reg0);
     }
     // Here (Reg1+Reg0)=r.
 }
@@ -231,10 +239,10 @@ operation GMFDIV(Reg0 : Qubit[], Reg1 : Qubit[], Reg2 : Qubit[], d : BigInt) : U
 // Computes (z, q):=(z%d, z/d).
 // z is n-qubit dividend; d is constant n-bit divisor; 1<=d<2^n.
 // q has n qubits and must be prepared in zero state.
-operation GMFDIV1(z : Qubit[], d : BigInt, q : Qubit[]) : Unit {
+operation GMFDIV1(z : Qubit[], d : BigInt, q : Qubit[]) : Unit is Ctl + Adj {
     let n = Length(q);
     use Reg0 = Qubit[n];
-    GMFDIV(Reg0, z, q, d);
+    GMFDIV(Reg0, z, q, d, 1);
 }
 
 // Division by constant (special case for 2n-qubit dividend).
@@ -242,11 +250,11 @@ operation GMFDIV1(z : Qubit[], d : BigInt, q : Qubit[]) : Unit {
 // z is 2n-qubit dividend; d is constant n-bit divisor; 1<=d<2^n.
 // q has n qubits and must be prepared in zero state.
 // It must be guaranteed that z/d < 2^n.
-operation GMFDIV2(z : Qubit[], d : BigInt, q : Qubit[]) : Unit {
+operation GMFDIV2(z : Qubit[], d : BigInt, q : Qubit[]) : Unit is Ctl + Adj {
     let n = Length(q);
     Fact(Length(z) == 2 * n, "Size mismatch.");
-    GMFDIV(z[n..2 * n-1], z[0..n-1], q, d);
+    GMFDIV(z[n..2 * n-1], z[0..n-1], q, d, 2);
 }
 
 
-export FMAC;
+export FMAC, GMFDIV1, GMFDIV2;

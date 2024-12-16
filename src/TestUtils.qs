@@ -81,3 +81,17 @@ operation UnaryOpInPlace(n : Int, x_val : Int, op : (Qubit[]) => Unit) : Int {
     op(x);
     return MeasureInteger(x);
 }
+
+// Calculates a_val*b_val using out-of-place multiplier `op`.
+// Inputs are n-bit, output is 2n-bit.
+operation TestMultiply(n : Int, a_val : Int, b_val : Int, op : (Qubit[], Qubit[], Qubit[]) => Unit) : Int {
+    use a = Qubit[n];
+    use b = Qubit[n];
+    use ans = Qubit[2 * n];
+    ApplyPauliFromInt(PauliX, true, a_val, a);
+    ApplyPauliFromInt(PauliX, true, b_val, b);
+    op(a, b, ans);
+    Fact(MeasureInteger(a) == a_val, "a was changed.");
+    Fact(MeasureInteger(b) == b_val, "b was changed.");
+    return MeasureInteger(ans);
+}

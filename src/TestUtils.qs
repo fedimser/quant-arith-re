@@ -73,3 +73,11 @@ operation BinaryOpExtraOut(n : Int, x_val : Int, y_val : Int, op : (Qubit[], Qub
     let ans = MeasureInteger(results);
     return ans;
 }
+
+// Computes op(x).
+operation UnaryOpInPlace(n : Int, x_val : Int, op : (Qubit[]) => Unit) : Int {
+    use x = Qubit[n];
+    ApplyPauliFromInt(PauliX, true, x_val, x);
+    op(x);
+    return MeasureInteger(x);
+}

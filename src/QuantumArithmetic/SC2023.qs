@@ -1,4 +1,3 @@
-import Std.Diagnostics.DumpMachine;
 // Quantum Adder using Ling Structure
 // https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=10321948&tag=1
 import Std.ResourceEstimation.AuxQubitCount;
@@ -41,7 +40,6 @@ operation Add(A : Qubit[], B : Qubit[], pl: Qubit[], Z: Qubit) : Unit is Adj + C
 
     let bitNum2 = Length(gBK2);
     let BKOps2 = BKTree(bitNum2);
-    Message($"BKOps1={BKOps1}, BKOps2={BKOps2}");
 
     use accilla1 = Qubit[3 * Length(BKOps1)];
     use accilla2 = Qubit[3 * Length(BKOps2)];
@@ -49,10 +47,10 @@ operation Add(A : Qubit[], B : Qubit[], pl: Qubit[], Z: Qubit) : Unit is Adj + C
     for i in 0..n-1 {
         Step1(A[i], B[i], gl[i], pl[i]);
     }
+
     within{
         // step 2
         // do even first
-        DumpMachine();
         if (n % 2 == 0) {
             for i in 0..2..n-4 {
                 Step2(pl[i], pl[i+1], gl[i], gl[i+1], p[i+2], g[i+1]);
@@ -63,7 +61,6 @@ operation Add(A : Qubit[], B : Qubit[], pl: Qubit[], Z: Qubit) : Unit is Adj + C
             }
         } else {
             for i in 0..2..n-3 {
-                Message($"even, i={i}");
                 Step2(pl[i], pl[i+1], gl[i], gl[i+1], p[i+2], g[i+1]);
             }
             for i in 1..2..n-4 {
@@ -82,8 +79,7 @@ operation Add(A : Qubit[], B : Qubit[], pl: Qubit[], Z: Qubit) : Unit is Adj + C
             // PropagateG(g[0], p[1], g[2], accilla[0], accilla[2]);
             // PropagateG(g[1], p[2], g[3], accilla[1], accilla[3]);
         // }
-        DumpMachine();
-        if (Length(BKOps2) > 0) {
+        if (Length(BKOps1) > 0) {
             // LingBrentKung(g, p, accilla);
             BrentKung(gBK1, pBK1, accilla1, BKOps1);
         } 
@@ -94,7 +90,6 @@ operation Add(A : Qubit[], B : Qubit[], pl: Qubit[], Z: Qubit) : Unit is Adj + C
     // BKTreePropagation(g, p, h, accilla);
     } apply {
         // let h = [g_1[0], g_1[1], accilla[2], accilla[3]];
-        DumpMachine();
         Summation(g, pl, B, Z);
     }
     // uncompute step 1
@@ -167,8 +162,8 @@ function BitLength(x: Int) : Int {
 
 operation PropagateG(gi: Qubit, pii: Qubit, giii: Qubit, acilla0: Qubit, acilla1: Qubit) : Unit is Adj + Ctl {
     // Calculate px_gy and new_p using Toffoli gate
-    CCNOT(gi, pii, acilla0);
-    ORGate(giii, acilla0, acilla1);
+    CCNOT(giii, pii, acilla0);
+    ORGate(gi, acilla0, acilla1);
 }
 
 operation PropagateP(px: Qubit, py: Qubit, acilla2: Qubit) : Unit is Adj + Ctl {
@@ -230,6 +225,8 @@ function BKTree(bitWidth : Int) : (Int, Int, Int)[] {
 }
 
 operation BrentKung(gNumber : Qubit[], pNumber : Qubit[], acillas : Qubit[], BKOps: (Int, Int, Int)[])  : Unit is Adj + Ctl {
+    DumpRegister(gNumber);
+    DumpRegister(pNumber);
     let num_ops = Length(BKOps);
     for i in 0..num_ops - 1 {
         let (_, index_now, index_bk) = BKOps[i];
@@ -243,14 +240,19 @@ operation BrentKung(gNumber : Qubit[], pNumber : Qubit[], acillas : Qubit[], BKO
             acillas[acillaOffset + 1]
         );
         SWAP(gNumber[index_now], acillas[acillaOffset + 1]);
+        // set gNumber[index_now] = acillas[acillaOffset + 1];
         // Use PropagateP for P propagation
-        PropagateP(
-            pNumber[index_now],
-            pNumber[index_bk],
-            acillas[acillaOffset + 2]
-        );
-        SWAP(pNumber[index_now], acillas[acillaOffset + 2]);
+        // if (index_now > 0 and index_bk > 0) {
+            PropagateP(
+                pNumber[index_now],
+                pNumber[index_bk],
+                acillas[acillaOffset + 2]
+            );
+            SWAP(pNumber[index_now], acillas[acillaOffset + 2]);
+        // }
     }
+    DumpRegister(gNumber);
+    DumpRegister(pNumber);
 }
 // /// Function to implement Ling-based Brent-Kung tree
 // operation LingBrentKung(gNumber : Qubit[], pNumber : Qubit[], acillas : Qubit[]) : Unit is Adj + Ctl {

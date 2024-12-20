@@ -8,7 +8,7 @@ def setup():
     init(project_root='.')
 
 
-@pytest.mark.parametrize("n", [2, 3]) # needs to debug 4 and 5
+@pytest.mark.parametrize("n", [2, 3, 5, 8, 9, 16, 17, 32, 33]) # needs to debug 4 and 5
 def test_Add(n: int):
     op = "QuantumArithmetic.SC2023.Add"
     for _ in range(10):

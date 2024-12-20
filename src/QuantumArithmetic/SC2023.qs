@@ -225,8 +225,7 @@ function BKTree(bitWidth : Int) : (Int, Int, Int)[] {
 }
 
 operation BrentKung(gNumber : Qubit[], pNumber : Qubit[], acillas : Qubit[], BKOps: (Int, Int, Int)[])  : Unit is Adj + Ctl {
-    DumpRegister(gNumber);
-    DumpRegister(pNumber);
+
     let num_ops = Length(BKOps);
     for i in 0..num_ops - 1 {
         let (_, index_now, index_bk) = BKOps[i];
@@ -251,8 +250,7 @@ operation BrentKung(gNumber : Qubit[], pNumber : Qubit[], acillas : Qubit[], BKO
             SWAP(pNumber[index_now], acillas[acillaOffset + 2]);
         // }
     }
-    DumpRegister(gNumber);
-    DumpRegister(pNumber);
+
 }
 // /// Function to implement Ling-based Brent-Kung tree
 // operation LingBrentKung(gNumber : Qubit[], pNumber : Qubit[], acillas : Qubit[]) : Unit is Adj + Ctl {

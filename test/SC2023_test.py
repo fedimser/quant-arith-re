@@ -14,4 +14,4 @@ def test_Add(n: int):
     for _ in range(10):
         x, y = random.randint(0, 2**n-1), random.randint(0, 2**n-1)
         ans = eval(f"TestUtils.BinaryOpExtraOut({n},{x},{y},{op})")
-        assert ans == (x+y) % (2**n)
+        assert ans == (x+y) 

@@ -1,5 +1,39 @@
-import Std.Math.ExpModI;
+import Std.Convert.BigIntAsBoolArray;
 import Std.Diagnostics.Fact;
+import Std.Math.ExpModI;
+
+
+// Writes little-endian integer to quantum register (prepared in 0 state).
+operation ApplyBigInt(val : BigInt, reg : Qubit[]) : Unit is Adj + Ctl {
+    let bits = BigIntAsBoolArray(val, Length(reg));
+    ApplyPauliFromBitString(PauliX, true, bits, reg);
+}
+
+// Measures content of register as little-endian BigInt. 
+// Resets register to zero state.
+operation MeasureBigInt(reg : Qubit[]) : BigInt {
+    let n = Length(reg);
+    mutable base : BigInt = 1L;
+    mutable ans : BigInt = 0L;
+    for i in 0..n-1 {
+        let measurement = MResetZ(reg[i]);
+        if (measurement == One) {
+            set ans += base;
+        }
+        set base *= 2L;
+    }
+    return ans;
+}
+
+operation ApplyPauliFromBigInt(pauli : Pauli, bitApply : Bool, bits : Bool[], qubits : Qubit[]) : Unit is Adj + Ctl {
+    let nBits = Length(bits);
+    Fact(nBits == Length(qubits), "Number of bits must be equal to number of qubits.");
+    for i in 0..nBits - 1 {
+        if bits[i] == bitApply {
+            ApplyP(pauli, qubits[i]);
+        }
+    }
+}
 
 // Applies binary operation on quantum integers.
 // 1. Creates qubit register x of size n, populates it with integer x_val.
@@ -82,14 +116,14 @@ operation UnaryOpInPlace(n : Int, x_val : Int, op : (Qubit[]) => Unit) : Int {
 
 // Calculates a_val*b_val using out-of-place multiplier `op`.
 // Inputs are n-bit, output is 2n-bit.
-operation TestMultiply(n : Int, a_val : Int, b_val : Int, op : (Qubit[], Qubit[], Qubit[]) => Unit) : Int {
+operation TestMultiply(n : Int, a_val : BigInt, b_val : BigInt, op : (Qubit[], Qubit[], Qubit[]) => Unit) : BigInt {
     use a = Qubit[n];
     use b = Qubit[n];
     use ans = Qubit[2 * n];
-    ApplyPauliFromInt(PauliX, true, a_val, a);
-    ApplyPauliFromInt(PauliX, true, b_val, b);
+    ApplyBigInt(a_val, a);
+    ApplyBigInt(b_val, b);
     op(a, b, ans);
-    Fact(MeasureInteger(a) == a_val, "a was changed.");
-    Fact(MeasureInteger(b) == b_val, "b was changed.");
-    return MeasureInteger(ans);
+    Fact(MeasureBigInt(a) == a_val, "a was changed.");
+    Fact(MeasureBigInt(b) == b_val, "b was changed.");
+    return MeasureBigInt(ans);
 }

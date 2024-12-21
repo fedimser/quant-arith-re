@@ -297,7 +297,6 @@ operation FMUL_MOD2(c : Qubit, y : Qubit[], a : BigInt, N : BigInt) : Unit is Ct
     let a_inv : BigInt = ((a_inv % N) + N) % N;
     Fact(1L <= a_inv and a_inv < N, "a_inv out of bound");
     Fact((a * a_inv) % N == 1L, "a_inv is computed incorrectly");
-    Message($"a_inv={a_inv}");
 
     let n = Length(y);
     use ans = Qubit[n];
@@ -318,7 +317,6 @@ operation EXP_MOD(x : Qubit[], y : Qubit[], a : BigInt, N : BigInt) : Unit is Ct
     mutable a_cur : BigInt = a;
     X(y[0]); // y:=1.
     for i in 0..Length(x)-1 {
-        Message($"{a}^(2^{i})={a_cur}");
         FMUL_MOD2(x[i], y, a_cur, N);
         set a_cur = (a_cur * a_cur) % N;
     }

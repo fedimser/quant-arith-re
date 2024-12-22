@@ -108,4 +108,16 @@ operation Add(A : Qubit[], B : Qubit[]) : Unit is Adj + Ctl {
     CNOT(A[n-1], B[n-1]);
 }
 
-export Add;
+// Computes B:=(A+B)%(2^n), Z:=(Z+(A+B)/(2^n))%2.
+operation AddWithCarry(A : Qubit[], B : Qubit[], Z : Qubit) : Unit is Adj + Ctl {
+    let n : Int = Length(A);
+    Fact(Length(B) == n, "Register sizes must match.");
+
+    if (n >= 4) {
+        Add_Optimized(A, B, Z);
+    } elif (n >= 1) {
+        Add_Simple(A, B, Z);
+    }
+}
+
+export Add, AddWithCarry;

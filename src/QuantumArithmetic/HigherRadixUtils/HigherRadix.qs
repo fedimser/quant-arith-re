@@ -1,10 +1,12 @@
 // this is the main file to handle higher radix used in
 // the file WBC2023.qs
 
+import QuantumArithmetic.HigherRadixUtils.BrentKungTree;
+
 // This is the main function that takes the existing numbers in binary (size N) and returns an
 // initial state where the addition is able to use the radix for optimization
 operation HigherRadix(A: Qubit[], B: Qubit[], ancilla : Qubit[], radix : Int) : Unit is Adj + Ctl {
-    let num_groups : Int = (Length(B)+radix-1)/radix;
+    let num_groups : Int = (Length(B)+radix-1)/radix - 1; // -1 to ignore gsb
     // The first step is to generate the least significant g which is uncomputed last
     within{
         generate_lsg(A, B, ancilla, radix);
@@ -13,7 +15,7 @@ operation HigherRadix(A: Qubit[], B: Qubit[], ancilla : Qubit[], radix : Int) : 
         generate_other_g(A, B, ancilla, radix);
         use group_ancilla = Qubit[num_groups];
         within{
-            generate_p(A, B);
+            generate_p(A, B, radix);
 
             // RADIX LAYER
             // p = B
@@ -32,6 +34,12 @@ operation HigherRadix(A: Qubit[], B: Qubit[], ancilla : Qubit[], radix : Int) : 
         } apply {
             generate_g_groups_pt2(B, ancilla, group_ancilla, radix);
             //BrentKungTree stuff
+            // g_group is carry and also last ancilla of the group based on radix
+            // p_group is group_ancilla 
+            // in BKTree stuff need another ancilla 
+
+
+            BrentKungTree.generate_BrentKung_tree(group_ancilla, ancilla[radix-1..radix..Length(group_ancilla)*radix-1]);
         }
     }
 
@@ -40,7 +48,7 @@ operation HigherRadix(A: Qubit[], B: Qubit[], ancilla : Qubit[], radix : Int) : 
 // generate g for the least significant qubit in each group
 // must be uncomputed
 operation generate_lsg(A: Qubit[], B: Qubit[], Ancilla : Qubit[], radix : Int) : Unit is Adj + Ctl {
-    let n : Int = Length(A);
+    let n : Int = Length(A) - (radix - Length(A)%radix);
     for i in 0..n-1 {
         if i%radix==0 {
             CCNOT(A[i], B[i], Ancilla[i]);
@@ -51,7 +59,7 @@ operation generate_lsg(A: Qubit[], B: Qubit[], Ancilla : Qubit[], radix : Int) :
 // generate g for non-least significant qubit in each group 
 // does not get uncomputed
 operation generate_other_g(A: Qubit[], B: Qubit[], Ancilla : Qubit[], radix : Int) : Unit is Adj + Ctl {
-    let n : Int = Length(A);
+    let n : Int = Length(A) - (radix - Length(A)%radix);
     for i in 0..n-1 {
         if i%radix!=0 {
             CCNOT(A[i], B[i], Ancilla[i]);
@@ -60,8 +68,8 @@ operation generate_other_g(A: Qubit[], B: Qubit[], Ancilla : Qubit[], radix : In
 }
 
 // genereates p must be uncomputed
-operation generate_p(A: Qubit[], B: Qubit[]) : Unit is Adj + Ctl {
-    let n : Int = Length(A);
+operation generate_p(A: Qubit[], B: Qubit[], radix: Int) : Unit is Adj + Ctl {
+    let n : Int = Length(A) - (radix - Length(A)%radix);
     for i in 0..n-1 {
         CNOT(A[i], B[i]);
     }

@@ -1,6 +1,17 @@
+import QuantumArithmetic.NZLS2023.Butterfly;
+import TestUtils.MeasureBigInt;
 import Std.Convert.IntAsBigInt;
 import Std.Diagnostics.Fact;
 
+
+operation TestButterfly(n1: Int, A_val: BigInt, B_val: BigInt) : (BigInt, BigInt) {
+    use A = Qubit[2*n1];
+    use B = Qubit[2*n1];
+    TestUtils.ApplyBigInt(A_val, A);
+    TestUtils.ApplyBigInt(B_val, B);
+    QuantumArithmetic.NZLS2023.Butterfly(A, B);   
+    return (MeasureBigInt(A), MeasureBigInt(B)); 
+}
 
 operation TestFFT(n1: Int, M1: Int, input: BigInt[]) : BigInt[] {
     let D: Int = Length(input);

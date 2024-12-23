@@ -19,7 +19,7 @@ operation Add_QFT(xs : Qubit[], ys : Qubit[]) : Unit is Adj + Ctl {
 }
 
 // Computes zs := xs + ys + zs[0] modulo 2^n.
-// Ref: Draper,Kutin,Rains,Svore, 2006, https://arxiv.org/abs/quant-ph/0406142
+// Ref: Draper,Kutin,Rains,Svore, 2004, https://arxiv.org/abs/quant-ph/0406142
 operation Add_DKRS(xs : Qubit[], ys : Qubit[], zs : Qubit[]) : Unit is Adj {
     Std.Arithmetic.LookAheadDKRSAddLE(xs, ys, zs);
 }

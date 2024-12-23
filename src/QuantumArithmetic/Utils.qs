@@ -22,26 +22,15 @@ operation ParallelCNOT(controls : Qubit[], targets : Qubit[]) : Unit is Ctl + Ad
     }
 }
 
-/// Rotates qubits right.
-/// Uses n-1 SWAP gates (and no other gates). Has depth at most 2.
-/// Idea from JHHA2016 paper (https://arxiv.org/abs/1608.01228).
-operation RotateRight(qubits : Qubit[]) : Unit is Adj + Ctl {
-    let k : Int = Length(qubits);
-    let k1 : Int = k / 2;
-    for i in 0..k1-1 {
-        SWAP(qubits[i], qubits[k-1-i]);
-    }
-    for i in 0..k1-2 + (k % 2) {
-        SWAP(qubits[i], qubits[k-2-i]);
-    }
+// Converts Range to Int array.
+function RangeAsIntArray(range: Range): Int[] {
+    return Std.Arrays.MappedOverRange(i -> i, range);
 }
 
 /// Computes: qubits[i] := qubits[P[i]] for i=0..n-1.
-/// Uses at most n-1 SWAP gates (and no other gates). Has depth at most 2.
-operation ApplyPermutationWithSWAPs(qubits: Qubit[], P: Int[]): Unit is Ctl + Adj{
-    let n = Length(qubits);
-    Fact(Length(qubits) == n, "Size mismatch.");
-
-    // Split permutation into cycles, rotate along each cycle.
-    
+/// Doesn't apply any quantum gates.
+operation ApplyPermutation(qubits : Qubit[], P : Int[]) : Unit is Adj {
+    Fact(Length(P) == Length(qubits), "Size mismatch.");
+    let newOrder = Std.Arrays.Mapped(i -> qubits[i], P);
+    Relabel(qubits, newOrder);
 }

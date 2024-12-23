@@ -97,11 +97,11 @@ operation BinaryOpExtraOut(n : Int, x_val : Int, y_val : Int, op : (Qubit[], Qub
 }
 
 // Computes op(x).
-operation UnaryOpInPlace(n : Int, x_val : Int, op : (Qubit[]) => Unit) : Int {
+operation UnaryOpInPlace(n : Int, x_val : BigInt, op : (Qubit[]) => Unit) : BigInt {
     use x = Qubit[n];
-    ApplyPauliFromInt(PauliX, true, x_val, x);
+    ApplyBigInt(x_val, x);
     op(x);
-    return MeasureInteger(x);
+    return MeasureBigInt(x);
 }
 
 // Calculates a_val*b_val using out-of-place multiplier `op`.

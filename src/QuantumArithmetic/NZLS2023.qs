@@ -27,19 +27,12 @@ operation MultiplyTextbook(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit is Adj 
 // Multiplies 2n'-bit number by 2^r modulo (2^n')+1.
 // As §III-B shows, this is equivalent to right cyclic shift by r.
 // r can be negative.
-// The paper instructs to implement this by rearranging qubits, but that is not
-// possible in Adjoint Q# operation. We implement it by SWAPs, hoping that Q# 
-// optimizing compiler will replace explicit SWAPs with renaming qubits.
-// This operation is intentionally not marked Controlled, to guarantee that 
-// SWAPs can be eliminated.
-// TODO: optimize so it takes O(len) SWAP gates.
 operation CyclicShiftRight(A : Qubit[], r : Int) : Unit is Adj {
     let len = Length(A); // len = 2n'.
     Fact(len % 2 == 0, "Register length must be even");
-    let r1 = (r % len + r) % len;
-    for i in 1..r {
-        Utils.RotateRight(A);
-    }
+    let r1 = (r % len + len) % len;
+    let perm = Utils.RangeAsIntArray(len-r1..len-1)+Utils.RangeAsIntArray(0..len-r1-1);
+    Utils.ApplyPermutation(A, perm);
 }
 
 // Computes B+=A.

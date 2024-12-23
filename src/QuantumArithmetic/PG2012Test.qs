@@ -1,8 +1,3 @@
-/// Implementation of operations presented in paper:
-///   Fast quantum modular exponentiation architecture for Shor's factoring algorithm
-///   Archimedes Pavlidis and Dimitris Gizopoulos, 2012.
-///   https://arxiv.org/pdf/1207.0511
-
 import Std.Convert.IntAsBigInt;
 import Std.Diagnostics.Fact;
 

@@ -19,7 +19,7 @@ def test_MultiplyTextbook(n: int):
         assert ans == expected
 
 
-@pytest.mark.parametrize("n", [2, 4, 6]) # TODO: make work for n>=8.
+@pytest.mark.parametrize("n", [2, 4, 6, 8, 16, 32, 64])
 def test_CyclicShiftRight(n: int):
     for _ in range(105):
         x = random.randint(0, 2**(n)-1)

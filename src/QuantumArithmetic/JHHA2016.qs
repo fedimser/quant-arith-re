@@ -4,6 +4,7 @@
 /// https://arxiv.org/abs/1608.01228
 
 import Std.Diagnostics.Fact;
+import QuantumArithmetic.Utils;
 
 // Computes P+=Am*B[1..].
 // B[0] must be prepared in zero state and is returned in zero state.
@@ -22,18 +23,6 @@ operation AddNop(P : Qubit[], B : Qubit[], Am : Qubit) : Unit is Adj + Ctl {
     }
 }
 
-// Rotates right bits of P.
-operation RotateRight(P : Qubit[]) : Unit is Adj + Ctl {
-    let k : Int = Length(P);
-    let k1 : Int = k / 2;
-    for i in 0..k1-1 {
-        SWAP(P[i], P[k-1-i]);
-    }
-    for i in 0..k1-2 + (k % 2) {
-        SWAP(P[i], P[k-2-i]);
-    }
-}
-
 // Computes P+=A*B (mod 2^n).
 operation Multiply(A : Qubit[], B : Qubit[], P : Qubit[]) : Unit is Adj + Ctl {
     let n : Int = Length(A);
@@ -43,7 +32,7 @@ operation Multiply(A : Qubit[], B : Qubit[], P : Qubit[]) : Unit is Adj + Ctl {
 
     for i in 0..n-2 {
         AddNop(P[n-1..2 * n-1], [Zcin] + B, A[i]);
-        RotateRight(P);
+        Utils.RotateRight(P);
     }
     AddNop(P[n-1..2 * n-1], [Zcin] + B, A[n-1]);
 }

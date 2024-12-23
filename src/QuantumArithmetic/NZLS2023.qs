@@ -32,7 +32,7 @@ operation CyclicShiftRight(A : Qubit[], r : Int) : Unit is Adj {
     Fact(len % 2 == 0, "Register length must be even");
     let r1 = (r % len + len) % len;
     let perm = Utils.RangeAsIntArray(len-r1..len-1)+Utils.RangeAsIntArray(0..len-r1-1);
-    Utils.ApplyPermutation(A, perm);
+    Utils.ApplyPermutationUsingSWAPs(A, perm);
 }
 
 // Computes B+=A.

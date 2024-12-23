@@ -1,6 +1,3 @@
-import Std.Math.GreatestCommonDivisorL;
-import Std.Math.GreatestCommonDivisorI;
-import QuantumArithmetic.Utils.ParallelCNOT;
 /// Implementation of operations presented in paper:
 ///   Fast quantum modular exponentiation architecture for Shor's factoring algorithm
 ///   Archimedes Pavlidis and Dimitris Gizopoulos, 2012.
@@ -278,7 +275,7 @@ operation FMAC_MOD2(
     GMFDIV2(ans + anc1, N, anc3);
     // Here anc1=0, ans=(c*a*y)%N, anc3=(c*a*y)/N.
 
-    ParallelCNOT(ans, anc2);
+    Utils.ParallelCNOT(ans, anc2);
 
     Adjoint GMFDIV2(anc2 + anc1, N, anc3);
     within {

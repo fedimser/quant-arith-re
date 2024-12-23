@@ -5,6 +5,7 @@
 
 import Std.Diagnostics.Fact;
 import QuantumArithmetic.HigherRadixUtils.HigherRadix.HigherRadix;
+import QuantumArithmetic.AdditionStd.Add_CG;
 
 
 operation Add(A: Qubit[], B: Qubit[], radix: Int) : Unit is Adj + Ctl {
@@ -17,5 +18,11 @@ operation Add(A: Qubit[], B: Qubit[], radix: Int) : Unit is Adj + Ctl {
     HigherRadix(A, B, ancilla, radix);
 
     // call the adder which uses chunks to sum the numbers using the radix
+    for i in 0..n/radix-1 {
+        let a_piece : Qubit[] = A[i*radix..(i+1)*radix -1];
+        let b_piece : Qubit[] = B[i*radix..(i+1)*radix -1];
+        Add_CG(a_piece, b_piece);
+    }
+
 
 }

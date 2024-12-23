@@ -31,10 +31,12 @@ operation CyclicShiftRight(A : Qubit[], r : Int) : Unit is Adj {
     let len = Length(A); // len = 2n'.
     Fact(len % 2 == 0, "Register length must be even");
     let r1 = (r % len + len) % len;
-    let perm = Utils.RangeAsIntArray(len-r1..len-1)+Utils.RangeAsIntArray(0..len-r1-1);
+    let perm = Utils.RangeAsIntArray(len-r1..len-1) + Utils.RangeAsIntArray(0..len-r1-1);
     Utils.ApplyPermutationUsingSWAPs(A, perm);
 }
 
+// TODO: This is wrong!
+// Need addition modulo 2^(2n')-1, which is not in the standard library.
 // Computes B+=A.
 operation AddDKRSInPlace(A : Qubit[], B : Qubit[]) : Unit is Adj + Ctl {
     Std.Arithmetic.IncByLEUsingAddLE(
@@ -69,23 +71,30 @@ operation Butterfly(A : Qubit[], B : Qubit[]) : Unit is Adj {
 operation FFT(X : Qubit[][], g_pwr : Int) : Unit is Adj {
     // g = 2^g_pwr.
     let D = Length(X);
-    if (D==4) {
+    if (D == 4) {
         AddDKRSInPlace(X[0], X[1]);
     }
-    if (D > 1) {      
+    if (D > 1) {
         Message($"D={D}");
         Fact(D % 2 == 0, "D must be power of 2.");
         let half_D = D / 2;
-        let g_sqr_pwr = (2 * g_pwr) % Length(X[0]);
+        let len = Length(X[0]); // 2n'.
+        let g_sqr_pwr = (2 * g_pwr) % len;
         FFT(X[0..2..D-2], g_sqr_pwr);
         FFT(X[1..2..D-1], g_sqr_pwr);
         for i in 0..half_D-1 {
-            CyclicShiftRight(X[2 * i + 1], g_pwr*i); // x g^i.
+            CyclicShiftRight(X[2 * i + 1], g_pwr * i); // x g^i.
         }
         for i in 0..half_D-1 {
-            Butterfly(X[2*i], X[2*i+1]);
+            Butterfly(X[2 * i], X[2 * i + 1]);
         }
-        // TODO: Rearrange.
+
+        // Reorder the result.
+        let perm = Utils.RangeAsIntArray(0..2..D-2) + Utils.RangeAsIntArray(1..2..D-1);
+        for bit_idx in 0..len-1 {
+            let qs = Std.Arrays.MappedOverRange(i -> X[i][bit_idx], 0..D-1);
+            Utils.ApplyPermutationUsingSWAPs(qs, perm);
+        }
     }
 }
 

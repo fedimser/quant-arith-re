@@ -25,16 +25,6 @@ operation MeasureBigInt(reg : Qubit[]) : BigInt {
     return ans;
 }
 
-operation ApplyPauliFromBigInt(pauli : Pauli, bitApply : Bool, bits : Bool[], qubits : Qubit[]) : Unit is Adj + Ctl {
-    let nBits = Length(bits);
-    Fact(nBits == Length(qubits), "Number of bits must be equal to number of qubits.");
-    for i in 0..nBits - 1 {
-        if bits[i] == bitApply {
-            ApplyP(pauli, qubits[i]);
-        }
-    }
-}
-
 // Applies binary operation on quantum integers.
 // 1. Creates qubit register x of size n, populates it with integer x_val.
 // 2. Creates qubit register y of size n, populates it with integer y_val.

@@ -34,14 +34,6 @@ function RangeAsIntArray(range : Range) : Int[] {
     return Std.Arrays.MappedOverRange(i -> i, range);
 }
 
-/// Computes: qubits[i] := qubits[P[i]] for i=0..n-1.
-/// Doesn't apply any quantum gates.
-operation ApplyPermutation(qubits : Qubit[], P : Int[]) : Unit is Adj {
-    Fact(Length(P) == Length(qubits), "Size mismatch.");
-    let newOrder = Std.Arrays.Mapped(i -> qubits[i], P);
-    Relabel(qubits, newOrder);
-}
-
 /// For a permutation, finds all cycles with length >= 2.
 function GetCycles(P : Int[]) : Int[][] {
     let n = Length(P);
@@ -62,23 +54,42 @@ function GetCycles(P : Int[]) : Int[][] {
     return ans;
 }
 
-/// Computes: qubits[i] := qubits[P[i]] for i=0..n-1.
-/// Uses at most n-1 SWAP gates (and no other gates). Has depth at most 2.
-/// Uses a technique from JHHA2016.
-operation ApplyPermutationUsingSWAPs(qubits : Qubit[], P : Int[]) : Unit is Ctl + Adj {
-    let n = Length(qubits);
-    Fact(Length(P) == n, "Size mismatch.");
-
-    // Split permutation into cycles, rotate along each cycle.
+/// Decomposes permutation into swaps.
+/// Result will have at most n-1 swaps and depth at most 2.
+/// Uses a technique from JHHA2016 paper (https://arxiv.org/abs/1608.01228).
+function PermutationToSwaps(P : Int[]) : (Int, Int)[] {
+    mutable ans : (Int, Int)[] = [];
     let cycles = GetCycles(P);
     for cycle in cycles {
         let k : Int = Length(cycle);
         let k1 : Int = k / 2;
         for i in 0..k1-1 {
-            SWAP(qubits[cycle[i]], qubits[cycle[k-1-i]]);
+            set ans+=[(cycle[i], cycle[k-1-i])];
         }
         for i in 0..k1-2 + (k % 2) {
-            SWAP(qubits[cycle[i]], qubits[cycle[k-2-i]]);
+            set ans+=[(cycle[i], cycle[k-2-i])];
         }
+    }
+    return ans;
+}
+
+
+/// Equivalent to SWAP, but doesn't apply quantum gates.
+operation SWAPViaRelabel(q1: Qubit, q2:Qubit): Unit is Adj {
+    Relabel([q1, q2], [q2, q1]);
+}
+
+/// Computes: qubits[i] := qubits[P[i]] for i=0..n-1.
+/// Doesn't apply any quantum gates.
+operation ApplyPermutation(qubits : Qubit[], P : Int[]) : Unit is Adj {
+    Fact(Length(P) == Length(qubits), "Size mismatch.");
+    
+    // This line should work, but it doesn't because of Q# bug:
+    //   `Relabel(qubits, Std.Arrays.Mapped(i -> qubits[i], P));`
+    // Because of that, we temporarily decompose permutation into swaps, and 
+    // apply swaps using 2-qubit Relabels.
+
+    for (i,j) in PermutationToSwaps(P) {
+        SWAPViaRelabel(qubits[i], qubits[j]);
     }
 }

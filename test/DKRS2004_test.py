@@ -19,7 +19,6 @@ def test_Add(n: int):
         assert ans == expected
 
 
-
 @pytest.mark.parametrize("n", [1, 2, 3, 4, 5, 8, 16, 31, 32, 62])
 def test_AddWithCarry(n: int):
     op = "QuantumArithmetic.DKRS2004.AddWithCarry"
@@ -29,3 +28,14 @@ def test_AddWithCarry(n: int):
         ans = eval(f"TestUtils.BinaryOpInPlaceExtraOut({n},{a},{b},{op})")
         expected = a+b
         assert ans == expected
+
+
+@pytest.mark.parametrize("n", [1, 2, 3, 4, 5, 8, 16, 31, 32, 62])
+def test_AddMod2nm1OutOfPlace(n: int):
+    MOD = 2**n-1
+    op = "QuantumArithmetic.DKRS2004.AddMod2nm1OutOfPlace"
+    for _ in range(5):
+        a = random.randint(0, 2**n-1)
+        b = random.randint(0, 2**n-1)
+        ans = eval(f"TestUtils.BinaryOp({n},{a},{b},{op})")
+        assert ans % MOD == (a+b) % MOD

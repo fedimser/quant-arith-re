@@ -114,4 +114,45 @@ operation AddWithCarry(A : Qubit[], B : Qubit[], Carry: Qubit) : Unit is Adj + C
     InPlaceAddHelper(A, B, Z + [Carry]);
 }
 
+/// Computes carries array given A, B and C[0].
+/// By definition, C[i+1]=MAJ(A[i], B[i], C[i]).
+/// Answer is C[1..n], which must be prepared in 0 state.
+operation ComputeCarriesSimple(A : Qubit[], B : Qubit[], C : Qubit[]): Unit is Adj + Ctl  {
+    let n = Length(A);
+    Fact(Length(B) == n, "Size mismatch.");
+    Fact(Length(C) == n+1, "Size mismatch.");
+    for i in 0..n-1 {
+        within{
+            Std.Arithmetic.MAJ(A[i], B[i], C[i]);
+        } apply {
+            CNOT(C[i], C[i+1]);
+        }
+    }
+}
+
+/// Computes (A+B)/2^n.
+operation ComputeOverflowBitSimple(A : Qubit[], B : Qubit[], Carry : Qubit): Unit is Adj + Ctl {
+    let n = Length(A);
+    Fact(Length(B) == n, "Size mismatch.");
+    use C = Qubit[n+1];
+    within {
+        ComputeCarriesSimple(A,B,C);
+    } apply {
+        CNOT(C[n], Carry);
+    }
+}
+
+/// Inefficient (O(n) depth) implementation of adder modulo 2^n-1.
+/// Computes C:=(A+B)%(2^n-1).
+/// TODO: implement efficient adder from the paper.
+operation AddMod2nm1OutOfPlace(A : Qubit[], B : Qubit[], C : Qubit[]): Unit is Adj + Ctl {
+    let n = Length(A);
+    Fact(Length(B) == n, "Size mismatch.");
+    Fact(Length(C) == n, "Size mismatch.");
+    ComputeOverflowBitSimple(A, B, C[0]);
+    ComputeCarriesSimple(A[0..n-2], B[0..n-2], C);
+    ParallelCNOT(A, C);
+    ParallelCNOT(B, C);
+}
+
 export Add, AddWithCarry;

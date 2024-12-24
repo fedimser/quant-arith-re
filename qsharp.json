@@ -20,6 +20,7 @@
       "src/QuantumArithmetic/HigherRadixUtils/BrentKungTree.qs",
       "src/QuantumArithmetic/HigherRadixUtils/HigherRadix.qs",
       "src/Main.qs",
-      "src/TestUtils.qs"
+      "src/TestUtils.qs",
+      "src/EstimateUtils.qs"
     ]
   }

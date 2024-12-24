@@ -32,7 +32,7 @@ operation CyclicShiftRight(A : Qubit[], r : Int) : Unit is Adj {
     Fact(len % 2 == 0, "Register length must be even");
     let r1 = (r % len + len) % len;
     let perm = Utils.RangeAsIntArray(len-r1..len-1) + Utils.RangeAsIntArray(0..len-r1-1);
-    Utils.ApplyPermutationUsingSWAPs(A, perm);
+    Utils.ApplyPermutation(A, perm);
 }
 
 // TODO: This is wrong!
@@ -93,7 +93,7 @@ operation FFT(X : Qubit[][], g_pwr : Int) : Unit is Adj {
         let perm = Utils.RangeAsIntArray(0..2..D-2) + Utils.RangeAsIntArray(1..2..D-1);
         for bit_idx in 0..len-1 {
             let qs = Std.Arrays.MappedOverRange(i -> X[i][bit_idx], 0..D-1);
-            Utils.ApplyPermutationUsingSWAPs(qs, perm);
+            Utils.ApplyPermutation(qs, perm);
         }
     }
 }

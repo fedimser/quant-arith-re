@@ -13,6 +13,13 @@ function FloorLog2(n : BigInt) : Int {
     return ans;
 }
 
+/// Applies X for each qubit in register.
+operation ParallelX(qubits: Qubit[]) : Unit is Ctl + Adj {
+    for q in qubits {
+        X(q);
+    }
+}
+
 /// Applies CNOT between two registers.
 operation ParallelCNOT(controls : Qubit[], targets : Qubit[]) : Unit is Ctl + Adj {
     let n : Int = Length(controls);

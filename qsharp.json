@@ -4,6 +4,7 @@
       "src/QuantumArithmetic/AdditionStd.qs",
       "src/QuantumArithmetic/CDKM2004.qs",
       "src/QuantumArithmetic/CT2002.qs",
+      "src/QuantumArithmetic/DKRS2004.qs",
       "src/QuantumArithmetic/DM2004.qs",
       "src/QuantumArithmetic/JHHA2016.qs",
       "src/QuantumArithmetic/NZLS2023.qs",

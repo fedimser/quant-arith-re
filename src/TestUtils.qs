@@ -35,7 +35,7 @@ operation MeasureBigInt(reg : Qubit[]) : BigInt {
 operation BinaryOp(n : Int, x_val : Int, y_val : Int, op : (Qubit[], Qubit[], Qubit[]) => Unit) : Int {
     use x = Qubit[n];
     use y = Qubit[n];
-    use z = Qubit[n];
+    use z = Qubit[n]; //TODO: undo.
     ApplyPauliFromInt(PauliX, true, x_val, x);
     ApplyPauliFromInt(PauliX, true, y_val, y);
     op(x, y, z);

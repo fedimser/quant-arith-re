@@ -6,10 +6,9 @@
 
 import Std.Diagnostics.Fact;
 import Std.Math.*;
-import QuantumArithmetic.Utils.Rearrange2D;
+import QuantumArithmetic.Utils.*;
 
 operation PlusEqual(lvalue : Qubit[], offset : Qubit[]) : Unit is Adj + Ctl {
-    use carryIn = Qubit();
     let trimmedOffset = offset[0..Min([Length(lvalue), Length(offset)])-1];
     if (Length(trimmedOffset) > 0) {
         use pad = Qubit[Max([0, Length(lvalue) - Length(trimmedOffset)])];
@@ -18,42 +17,33 @@ operation PlusEqual(lvalue : Qubit[], offset : Qubit[]) : Unit is Adj + Ctl {
     }
 }
 
-operation LetAnd(lvalue : Qubit, a : Qubit, b : Qubit) : Unit is Adj + Ctl {
-    CCNOT(a, b, lvalue);
-
-}
-
-operation DelAnd(lvalue : Qubit, a : Qubit, b : Qubit) : Unit is Adj + Ctl {
-    Adjoint LetAnd(lvalue, a, b);
-
-}
-
-operation PlusEqualProductUsingSchoolbook(
-    lvalue : Qubit[],
-    factor1 : Qubit[],
-    factor2 : Qubit[]
+/// Computes C+=A*B.
+operation MultiplySchoolbook(
+    A : Qubit[],
+    B : Qubit[],
+    C : Qubit[]
 ) : Unit is Adj + Ctl {
-    let n1 = Length(factor1);
-    let n2 = Length(factor2);
+    let n1 = Length(A);
+    let n2 = Length(B);
     use w = Qubit[n2];
     for k in 0..n1-1 {
-        let v = w;
-
         for i in 0..n2-1 {
-            LetAnd(v[i], factor2[i], factor1[k]);
+            CCNOT(B[i], A[k], w[i]);
         }
-
-        let tail = lvalue[k..Length(lvalue)-1];
-        PlusEqual(tail, v);
-
+        PlusEqual(C[k..Length(C)-1], w);
         for i in 0..n2-1 {
-            DelAnd(v[i], factor2[i], factor1[k]);
+            CCNOT(B[i], A[k], w[i]);
         }
     }
 }
 
-
-function SplitPadBuffer(buf : Qubit[], pad : Qubit[], base_piece_size : Int, desired_piece_size : Int, piece_count : Int) : Qubit[][] {
+function SplitPadBuffer(
+    buf : Qubit[],
+    pad : Qubit[],
+    base_piece_size : Int,
+    desired_piece_size : Int,
+    piece_count : Int
+) : Qubit[][] {
     mutable result : Qubit[][] = [];
     mutable k_pad = 0;
     for i in 0..piece_count-1 {
@@ -79,19 +69,11 @@ function MergeBufferRanges(work_registers : Qubit[][], start : Int, len : Int) :
     return result;
 }
 
-function FloorBigLg2(n : BigInt) : Int {
-    return QuantumArithmetic.Utils.FloorLog2(n);
-}
-
-function CeilBigLg2(n : BigInt) : Int {
-    if (n <= 1L) {
+function CeilLg2(n : Int) : Int {
+    if (n <= 1) {
         return 0;
     }
-    return FloorBigLg2(n - 1L) + 1;
-}
-
-function CeilLg2(n : Int) : Int {
-    return CeilBigLg2(Std.Convert.IntAsBigInt(n));
+    return FloorLog2(Std.Convert.IntAsBigInt(n) - 1L) + 1;
 }
 
 function CeilMultiple(numerator : Int, multiple : Int) : Int {
@@ -102,85 +84,40 @@ function CeilPowerOf2(n : Int) : Int {
     return 1 <<< CeilLg2(n);
 }
 
-
 operation _PlusEqualProductUsingKaratsubaOnPieces(
-    output_pieces : Qubit[][],
-    input_pieces_1 : Qubit[][],
-    input_pieces_2 : Qubit[][]
+    out : Qubit[][],
+    in1 : Qubit[][],
+    in2 : Qubit[][]
 ) : Unit is Adj {
-
-    let n = Length(input_pieces_1);
-    Fact(Length(input_pieces_2) == n, "");
-    Fact(Length(output_pieces) == 2 * n, "");
+    let n = Length(in1);
+    Fact(Length(in2) == n, "Size msimatch.");
+    Fact(Length(out) == 2 * n, "Size msimatch.");
     if (n <= 1) {
         if (n == 1) {
-
-            PlusEqualProductUsingSchoolbook(
-                output_pieces[0],
-                input_pieces_1[0],
-                input_pieces_2[0]
-            );
-
+            MultiplySchoolbook(in1[0], in2[0], out[0]);
         }
     } else {
         let h = n >>> 1;
-
-        // Input 1 is logically split into two halves (a, b) such that a + 2**(wh) * b equals the input.
-        // Input 2 is logically split into two halves (x, y) such that x + 2**(wh) * y equals the input.
-
-        //-----------------------------------
-        // Perform
-        //     out += a*x * (1-2**(wh))
-        //     out -= b*y * 2**(wh) * (1-2**(wh))
-        //-----------------------------------
-        // Temporarily inverse-multiply the output by 1-2**(wh), so that the following two multiplied additions are scaled by 1-2**(wh).
-        if (true) {
-            within {
-                for i in h..4 * h - 1 {
-                    PlusEqual(output_pieces[i], output_pieces[i - h]);
-                }
-            } apply {
-                // Recursive multiply-add for a*x.
-                _PlusEqualProductUsingKaratsubaOnPieces(
-                    output_pieces[0..2 * h-1],
-                    input_pieces_1[0..h-1],
-                    input_pieces_2[0..h-1]
-                );
-                // Recursive multiply-subtract for b*y.
-                Adjoint _PlusEqualProductUsingKaratsubaOnPieces(
-                    output_pieces[h..3 * h-1],
-                    input_pieces_1[h..2 * h-1],
-                    input_pieces_2[h..2 * h-1]
-                );
+        within {
+            for i in h..4 * h - 1 {
+                PlusEqual(out[i], out[i - h]);
             }
+        } apply {
+            _PlusEqualProductUsingKaratsubaOnPieces(out[0..2 * h-1], in1[0..h-1], in2[0..h-1]);
+            Adjoint _PlusEqualProductUsingKaratsubaOnPieces(out[h..3 * h-1], in1[h..2 * h-1], in2[h..2 * h-1]);
         }
-
-        //PrintBuffers("L1", output_pieces);
-
-        //-------------------------------
-        // Perform
-        //     out += (a+b)*(x+y) * 2**(wh)
-        //-------------------------------
-        // Temporarily store a+b over a and x+y over x.
-        if (true) {
-            within {
-                for i in 0..h-1 {
-                    PlusEqual(input_pieces_1[i], input_pieces_1[i + h]);
-                    PlusEqual(input_pieces_2[i], input_pieces_2[i + h]);
-                }
-            } apply {
-                // Recursive multiply-add for (a+b)*(x+y).
-                _PlusEqualProductUsingKaratsubaOnPieces(
-                    output_pieces[h..3 * h-1],
-                    input_pieces_1[0..h-1],
-                    input_pieces_2[0..h-1]
-                );
+        within {
+            for i in 0..h-1 {
+                PlusEqual(in1[i], in1[i + h]);
+                PlusEqual(in2[i], in2[i + h]);
             }
+        } apply {
+            _PlusEqualProductUsingKaratsubaOnPieces(out[h..3 * h-1], in1[0..h-1], in2[0..h-1]);
         }
     }
 }
 
-operation _PlusEqualProductUsingKaratsuba_Helper(
+operation MultiplyKaratsubaHelper(
     lvalue : Qubit[],
     factor1 : Qubit[],
     factor2 : Qubit[],
@@ -200,10 +137,6 @@ operation _PlusEqualProductUsingKaratsuba_Helper(
     use work_bufs_backing = Qubit[work_buf_piece_size * piece_count * 2];
     let work_bufs : Qubit[][] = Rearrange2D(work_bufs_backing, 2 * piece_count, work_buf_piece_size);
 
-
-
-    //PrintBuffers("before Karatsuba", work_bufs);
-
     // Add into workspaces, merge into output, then uncompute workspace.
     within {
         _PlusEqualProductUsingKaratsubaOnPieces(work_bufs, in_bufs1, in_bufs2);
@@ -217,10 +150,10 @@ operation _PlusEqualProductUsingKaratsuba_Helper(
 }
 
 /// Computes C+=A*B.
-operation Multiply(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit {
+operation MultiplyKaratsuba(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit {
     let min_piece_size = 8; // 32 in the original paper.
     let piece_size = Max([min_piece_size, 2 * CeilLg2(Max([Length(A), Length(B)]))]);
-    _PlusEqualProductUsingKaratsuba_Helper(C, A, B, piece_size);
+    MultiplyKaratsubaHelper(C, A, B, piece_size);
 }
 
-export Multiply;
+export MultiplySchoolbook, MultiplyKaratsuba;

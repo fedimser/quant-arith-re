@@ -15,6 +15,12 @@ operation BinaryOpExtraOut(n : Int, x_val : Int, y_val : Int, op : (Qubit[], Qub
     return ans;
 }
 
+operation RunBinaryOpInPlace(n : Int, op : (Qubit[], Qubit[]) => Unit) : Unit {
+    use a = Qubit[n];
+    use b = Qubit[n];
+    op(a, b);
+}
+
 operation RunMultiply(n : Int, op : (Qubit[], Qubit[], Qubit[]) => Unit) : Unit {
     use a = Qubit[n];
     use b = Qubit[n];

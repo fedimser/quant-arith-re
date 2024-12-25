@@ -123,7 +123,9 @@ operation AddWithCarry(A : Qubit[], B : Qubit[], Z : Qubit) : Unit is Adj + Ctl 
 // Computes B:=(A+B)%(2^n).
 operation AddUnoptimized(A : Qubit[], B : Qubit[]) : Unit is Adj + Ctl {
     let n : Int = Length(A);
-    Add_Simple(A[0..n-2], B[0..n-2], B[n-1]);
+    if (n>=2) {
+        Add_Simple(A[0..n-2], B[0..n-2], B[n-1]);
+    }
     CNOT(A[n-1], B[n-1]);
 }
 

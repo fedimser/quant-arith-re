@@ -156,4 +156,10 @@ operation MultiplyKaratsuba(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit {
     MultiplyKaratsubaHelper(C, A, B, piece_size);
 }
 
+operation MultiplyKaratsuba32(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit {
+    let min_piece_size = 32;
+    let piece_size = Max([min_piece_size, 2 * CeilLg2(Max([Length(A), Length(B)]))]);
+    MultiplyKaratsubaHelper(C, A, B, piece_size);
+}
+
 export MultiplySchoolbook, MultiplyKaratsuba;

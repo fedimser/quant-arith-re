@@ -14,3 +14,10 @@ operation BinaryOpExtraOut(n : Int, x_val : Int, y_val : Int, op : (Qubit[], Qub
     let ans = MeasureInteger(results);
     return ans;
 }
+
+operation RunMultiply(n : Int, op : (Qubit[], Qubit[], Qubit[]) => Unit) : Unit {
+    use a = Qubit[n];
+    use b = Qubit[n];
+    use ans = Qubit[2 * n];
+    op(a, b, ans);
+}

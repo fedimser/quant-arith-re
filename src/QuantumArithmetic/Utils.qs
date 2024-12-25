@@ -93,3 +93,13 @@ operation ApplyPermutation(qubits : Qubit[], P : Int[]) : Unit is Adj {
         SWAPViaRelabel(qubits[i], qubits[j]);
     }
 }
+
+/// Rearranges qubits into n1xn2 2-dimensional array.
+function Rearrange2D(q: Qubit[], n1: Int, n2: Int) : Qubit[][] {
+    Fact(Length(q) == n1 * n2, "Size mismatch in Rearrange2D.");
+    mutable ans: Qubit[][] = [];
+    for i in 0..n1-1 {
+        set ans += [q[i*n2..(i+1)*n2-1]];
+    }
+    return ans;
+}

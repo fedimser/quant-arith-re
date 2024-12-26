@@ -21,6 +21,13 @@ operation RunBinaryOpInPlace(n : Int, op : (Qubit[], Qubit[]) => Unit) : Unit {
     op(a, b);
 }
 
+operation Run3WayOp(n1 : Int, n2 : Int, n3 : Int, op : (Qubit[], Qubit[], Qubit[]) => Unit) : Unit {
+    use a = Qubit[n1];
+    use b = Qubit[n2];
+    use c = Qubit[n3];
+    op(a, b, c);
+}
+
 operation RunMultiply(n : Int, op : (Qubit[], Qubit[], Qubit[]) => Unit) : Unit {
     use a = Qubit[n];
     use b = Qubit[n];

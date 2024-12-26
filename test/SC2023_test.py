@@ -22,5 +22,5 @@ def test_Add(n: int):
     op = "QuantumArithmetic.SC2023.Add_Mod2"
     for _ in range(5):
         x, y = random.randint(0, 2**n-1), random.randint(0, 2**n-1)
-        ans = eval(f"TestUtils.BinaryOp({n},{x},{y},{op})")
+        ans = eval(f"TestUtils.BinaryOp({n},{x}L,{y}L,{op})")
         assert ans == (x+y)%(2**n) 

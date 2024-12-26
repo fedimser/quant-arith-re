@@ -248,7 +248,7 @@ operation Step1_uncompute(a : Qubit, b : Qubit, gl : Qubit, pl : Qubit) : Unit i
 
 
 // Computes C ⊕= (A+B) % 2^n.
-operation Add_Mod2(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit is Adj {
+operation Add_Mod2N(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit is Adj {
     let n = Length(A);
     Fact(n >= 3, "n too small.");
     Add(A[0..n-2], B[0..n-2], C[0..n-2], C[n-1]);

@@ -37,7 +37,7 @@ operation Add(A : Qubit[], B : Qubit[], Z: Qubit) : Unit is Adj + Ctl {
     }
 }
 
-operation Add_Mod2(A : Qubit[], B : Qubit[]) : Unit is Adj + Ctl {
+operation Add_Mod2N(A : Qubit[], B : Qubit[]) : Unit is Adj + Ctl {
     let n = Length(A);
     use ancilla = Qubit();
     let slot1Qubits = [ancilla] + Most(A);

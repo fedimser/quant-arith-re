@@ -17,8 +17,8 @@ def test_Add(n: int):
         assert ans == (x+y)
 
 @pytest.mark.parametrize("n", [2, 8, 16, 32])
-def test_Add_Mod2(n: int):
-    op = "QuantumArithmetic.DM2004.Add_Mod2"
+def test_Add_Mod2N(n: int):
+    op = "QuantumArithmetic.DM2004.Add_Mod2N"
     for _ in range(10):
         x, y = random.randint(0, 2**n-1), random.randint(0, 2**n-1)
         ans = eval(f"TestUtils.BinaryOpInPlace({n},{x}L,{y}L,{op})")

@@ -7,6 +7,7 @@
       "src/QuantumArithmetic/CT2002.qs",
       "src/QuantumArithmetic/DKRS2004.qs",
       "src/QuantumArithmetic/DM2004.qs",
+      "src/QuantumArithmetic/GKDKH2021.qs",
       "src/QuantumArithmetic/JHHA2016.qs",
       "src/QuantumArithmetic/NZLS2023.qs",
       "src/QuantumArithmetic/NZLS2023Test.qs",

@@ -13,7 +13,7 @@ def test_Subtract(n: int):
     op = "QuantumArithmetic.TMVH2019.Subtract"
     for _ in range(10):
         x, y = random.randint(0, 2**n-1), random.randint(0, 2**n-1)
-        ans = eval(f"TestUtils.BinaryOpInPlace({n},{x},{y},{op})")
+        ans = eval(f"TestUtils.BinaryOpInPlace({n},{x}L,{y}L,{op})")
         expected = (y-x) % (2**n)
         assert ans == expected
 

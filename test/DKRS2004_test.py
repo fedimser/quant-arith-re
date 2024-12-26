@@ -14,7 +14,7 @@ def test_Add(n: int):
     for _ in range(5):
         a = random.randint(0, 2**n-1)
         b = random.randint(0, 2**n-1)
-        ans = eval(f"TestUtils.BinaryOpInPlace({n},{a},{b},{op})")
+        ans = eval(f"TestUtils.BinaryOpInPlace({n},{a}L,{b}L,{op})")
         expected = (a+b) % (2**n)
         assert ans == expected
 
@@ -25,7 +25,7 @@ def test_AddWithCarry(n: int):
     for _ in range(5):
         a = random.randint(0, 2**n-1)
         b = random.randint(0, 2**n-1)
-        ans = eval(f"TestUtils.BinaryOpInPlaceExtraOut({n},{a},{b},{op})")
+        ans = eval(f"TestUtils.BinaryOpInPlaceExtraOut({n},{a}L,{b}L,{op})")
         expected = a+b
         assert ans == expected
 
@@ -37,5 +37,5 @@ def test_AddMod2nm1OutOfPlace(n: int):
     for _ in range(5):
         a = random.randint(0, 2**n-1)
         b = random.randint(0, 2**n-1)
-        ans = eval(f"TestUtils.BinaryOp({n},{a},{b},{op})")
+        ans = eval(f"TestUtils.BinaryOp({n},{a}L,{b}L,{op})")
         assert ans % MOD == (a+b) % MOD

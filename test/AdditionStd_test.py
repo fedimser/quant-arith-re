@@ -15,15 +15,15 @@ def test_addition(n: int):
         expected = (x+y) % (2**n)
 
         op = "QuantumArithmetic.AdditionStd.Add_TTK"
-        ans = eval(f"TestUtils.BinaryOpInPlace({n},{x},{y},{op})")
+        ans = eval(f"TestUtils.BinaryOpInPlace({n},{x}L,{y}L,{op})")
         assert ans == expected
 
         op = "QuantumArithmetic.AdditionStd.Add_CG"
-        ans = eval(f"TestUtils.BinaryOpInPlace({n},{x},{y},{op})")
+        ans = eval(f"TestUtils.BinaryOpInPlace({n},{x}L,{y}L,{op})")
         assert ans == expected
 
         op = "QuantumArithmetic.AdditionStd.Add_DKRS"
-        ans = eval(f"TestUtils.BinaryOp({n},{x},{y},{op})")
+        ans = eval(f"TestUtils.BinaryOp({n},{x}L,{y}L,{op})")
         assert ans == expected
 
 
@@ -34,5 +34,5 @@ def test_Add_QFT(n: int):
     for _ in range(10):
         x, y = random.randint(0, 2**n-1), random.randint(0, 2**n-1)
         expected = (x+y) % (2**n)
-        ans = eval(f"TestUtils.BinaryOpInPlace({n},{x},{y},{op})")
+        ans = eval(f"TestUtils.BinaryOpInPlace({n},{x}L,{y}L,{op})")
         assert ans == expected

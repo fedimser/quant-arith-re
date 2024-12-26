@@ -32,18 +32,18 @@ operation MeasureBigInt(reg : Qubit[]) : BigInt {
 // 3. Calls op(x, y, z).
 // 4. Measures value in z and returns it. Also checks that x and y were unchanged.
 // All numbers are little-endian.
-operation BinaryOp(n : Int, x_val : Int, y_val : Int, op : (Qubit[], Qubit[], Qubit[]) => Unit) : Int {
+operation BinaryOp(n : Int, x_val : BigInt, y_val : BigInt, op : (Qubit[], Qubit[], Qubit[]) => Unit) : BigInt {
     use x = Qubit[n];
     use y = Qubit[n];
-    use z = Qubit[n]; //TODO: undo.
-    ApplyPauliFromInt(PauliX, true, x_val, x);
-    ApplyPauliFromInt(PauliX, true, y_val, y);
+    use z = Qubit[n];
+    ApplyBigInt(x_val, x);
+    ApplyBigInt(y_val, y);
     op(x, y, z);
-    let new_x = MeasureInteger(x);
+    let new_x = MeasureBigInt(x);
     Fact(new_x == x_val, "x was changed.");
-    let new_y = MeasureInteger(y);
+    let new_y = MeasureBigInt(y);
     Fact(new_y == y_val, "y was changed.");
-    let new_z = MeasureInteger(z);
+    let new_z = MeasureBigInt(z);
     return new_z;
 }
 
@@ -53,46 +53,46 @@ operation BinaryOp(n : Int, x_val : Int, y_val : Int, op : (Qubit[], Qubit[], Qu
 // 3. Calls op(x, y).
 // 4. Measures value in y and returns it. Also checks that x was unchanged.
 // All numbers are little-endian.
-operation BinaryOpInPlace(n : Int, x_val : Int, y_val : Int, op : (Qubit[], Qubit[]) => Unit) : Int {
+operation BinaryOpInPlace(n : Int, x_val : BigInt, y_val : BigInt, op : (Qubit[], Qubit[]) => Unit) : BigInt {
     use x = Qubit[n];
     use y = Qubit[n];
-    ApplyPauliFromInt(PauliX, true, x_val, x);
-    ApplyPauliFromInt(PauliX, true, y_val, y);
+    ApplyBigInt(x_val, x);
+    ApplyBigInt(y_val, y);
     op(x, y);
-    let new_x = MeasureInteger(x);
+    let new_x = MeasureBigInt(x);
     Fact(new_x == x_val, "x was changed.");
-    let ans = MeasureInteger(y);
+    let ans = MeasureBigInt(y);
     return ans;
 }
 
-operation BinaryOpInPlaceExtraOut(n : Int, x_val : Int, y_val : Int, op : (Qubit[], Qubit[], Qubit) => Unit) : Int {
+operation BinaryOpInPlaceExtraOut(n : Int, x_val : BigInt, y_val : BigInt, op : (Qubit[], Qubit[], Qubit) => Unit) : BigInt {
     use x = Qubit[n];
     use y = Qubit[n];
     use z = Qubit();
-    ApplyPauliFromInt(PauliX, true, x_val, x);
-    ApplyPauliFromInt(PauliX, true, y_val, y);
+    ApplyBigInt(x_val, x);
+    ApplyBigInt(y_val, y);
     op(x, y, z);
-    let new_x = MeasureInteger(x);
+    let new_x = MeasureBigInt(x);
     Fact(new_x == x_val, "x was changed.");
     let results = y + [z];
-    let ans = MeasureInteger(results);
+    let ans = MeasureBigInt(results);
     return ans;
 }
 
-operation BinaryOpExtraOut(n : Int, x_val : Int, y_val : Int, op : (Qubit[], Qubit[], Qubit[], Qubit) => Unit) : Int {
+operation BinaryOpExtraOut(n : Int, x_val : BigInt, y_val : BigInt, op : (Qubit[], Qubit[], Qubit[], Qubit) => Unit) : BigInt {
     use x = Qubit[n];
     use y = Qubit[n];
     use z = Qubit[n];
     use z_extra = Qubit();
-    ApplyPauliFromInt(PauliX, true, x_val, x);
-    ApplyPauliFromInt(PauliX, true, y_val, y);
+    ApplyBigInt(x_val, x);
+    ApplyBigInt(y_val, y);
     op(x, y, z, z_extra);
-    let new_x = MeasureInteger(x);
+    let new_x = MeasureBigInt(x);
     Fact(new_x == x_val, "x was changed.");
-    let new_z = MeasureInteger(z);
+    let new_z = MeasureBigInt(z);
     Fact(new_z == y_val, "z was not changed to y.");
     let results = y + [z_extra];
-    let ans = MeasureInteger(results);
+    let ans = MeasureBigInt(results);
     return ans;
 }
 

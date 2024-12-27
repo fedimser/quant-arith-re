@@ -133,7 +133,6 @@ function BuildWallaceTreeCircuit(n1 : Int, n2 : Int) : WTCircuit {
         set groups = new_groups;
     }
 
-
     // The last layer is regular addition of 2 binary numbers.
     mutable output_bits : Int[] = [];
     for i in 0..n1 + n2-1 {
@@ -160,7 +159,6 @@ function BuildWallaceTreeCircuit(n1 : Int, n2 : Int) : WTCircuit {
             set groups w/= i + 1 <- groups[i + 1] + [carry_bit];
         }
     }
-
 
     // Remap qubit indexes so outputs are written right after inputs.
     mutable perm_before : Int[] = RangeAsIntArray(0..n1 + n2-1) + output_bits;

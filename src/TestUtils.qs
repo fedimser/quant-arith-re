@@ -9,7 +9,7 @@ operation ApplyBigInt(val : BigInt, reg : Qubit[]) : Unit is Adj + Ctl {
     ApplyPauliFromBitString(PauliX, true, bits, reg);
 }
 
-// Measures content of register as little-endian BigInt. 
+// Measures content of register as little-endian BigInt.
 // Resets register to zero state.
 operation MeasureBigInt(reg : Qubit[]) : BigInt {
     let n = Length(reg);
@@ -105,11 +105,11 @@ operation UnaryOpInPlace(n : Int, x_val : BigInt, op : (Qubit[]) => Unit) : BigI
 }
 
 // Calculates a_val*b_val using out-of-place multiplier `op`.
-// Inputs are n-bit, output is 2n-bit.
-operation TestMultiply(n : Int, a_val : BigInt, b_val : BigInt, op : (Qubit[], Qubit[], Qubit[]) => Unit) : BigInt {
-    use a = Qubit[n];
-    use b = Qubit[n];
-    use ans = Qubit[2 * n];
+// Inputs sizes are `a_size` and `b_size`. Output size is `a_size+b_size`.
+operation TestMultiply(a_size : Int, b_size : Int, a_val : BigInt, b_val : BigInt, op : (Qubit[], Qubit[], Qubit[]) => Unit) : BigInt {
+    use a = Qubit[a_size];
+    use b = Qubit[b_size];
+    use ans = Qubit[a_size + b_size];
     ApplyBigInt(a_val, a);
     ApplyBigInt(b_val, b);
     op(a, b, ans);
@@ -136,7 +136,7 @@ operation Test_Divide_Restoring(n : Int, a_val : Int, b_val : Int, op : (Qubit[]
     return (q_val, new_a_val);
 }
 
-operation BinaryOpInPlaceRadix(n : Int, x_val : Int, y_val : Int, radix: Int, op : (Qubit[], Qubit[], Int) => Unit) : Int {
+operation BinaryOpInPlaceRadix(n : Int, x_val : Int, y_val : Int, radix : Int, op : (Qubit[], Qubit[], Int) => Unit) : Int {
     use x = Qubit[n];
     use y = Qubit[n];
     ApplyPauliFromInt(PauliX, true, x_val, x);

@@ -24,6 +24,6 @@ def test_Multiply(n: int):
     for _ in range(5):
         a = random.randint(0, 2**n-1)
         b = random.randint(0, 2**n-1)
-        ans = eval(f"TestUtils.TestMultiply({n},{a}L,{b}L,{op})")
+        ans = eval(f"TestUtils.TestMultiply({n},{n},{a}L,{b}L,{op})")
         expected = a*b
         assert ans == expected

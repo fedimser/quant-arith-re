@@ -97,7 +97,7 @@ function BK_tree(num_qubits : Int) : Int[][] {
     return tree_matrice;
 }
 
-function columns_of_importance(BK_tree: Int[][], row: Int, col_length: Int) : Int[] {
+function get_columns_of_importance(BK_tree: Int[][], row: Int, col_length: Int) : Int[] {
     mutable counter : Int = 0;
     for column in 0..col_length -1 {
         if BK_tree[row][column] != column {
@@ -118,26 +118,42 @@ function columns_of_importance(BK_tree: Int[][], row: Int, col_length: Int) : In
 
 }
 
+
 //BKTree_process(BK_tree, p_pairs, g_pairs, bk_ancilla, ancilla_index, col_length, row);
 // the ancilla_index is the NEXT FREE index
 operation BKTree_process(BK_tree: Int[][], qubits_p: Qubit[], qubits_g: Qubit[], ancilla: Qubit[], ancilla_index: Int, col_length: Int, row: Int) : Unit is Adj + Ctl{
     mutable temp_row : Int = row;
-    let columns_of_importance : Int[] = columns_of_importance(BK_tree, temp_row, col_length);
+    let columns_of_importance : Int[] = get_columns_of_importance(BK_tree, temp_row, col_length);
+    mutable temp_qubits_p : Qubit[] = qubits_p;
+
     within{
         if Length(columns_of_importance) > 0 {
             for col_idx in 0..Length(columns_of_importance)-1{
                 CCNOT(qubits_p[BK_tree[temp_row][columns_of_importance[col_idx]]], qubits_p[columns_of_importance[col_idx]], ancilla[ancilla_index+col_idx]);
+                // CCNOT(array_qubits_p[col_idx][BK_tree[temp_row][columns_of_importance[col_idx]]], array_qubits_p[col_idx][columns_of_importance[col_idx]], ancilla[ancilla_index+col_idx]);
+                //set temp_qubits_p w/= col_idx <- ancilla[ancilla_index+col_idx];
+                // need to set qubits_p[index] = qubits_p_new = ancilla[ancilla_index+col_idx]
+                SWAP(temp_qubits_p[columns_of_importance[col_idx]], ancilla[ancilla_index + col_idx]);
             }
         }
     } apply{
         if Length(columns_of_importance) > 0 {
-            for column in columns_of_importance{
-                    // (qubits_g[BK_tree[temp_row][index]], qubits_p[index], qubits_g[index])
-                    CCNOT(qubits_g[BK_tree[temp_row][column]], qubits_p[column], qubits_g[column]);
+            for col_idx in 0..Length(columns_of_importance)-1{
+                // (qubits_g[BK_tree[temp_row][index]], qubits_p[index], qubits_g[index])
+                CCNOT(qubits_g[BK_tree[temp_row][columns_of_importance[col_idx]]], qubits_p[columns_of_importance[col_idx]], qubits_g[columns_of_importance[col_idx]]);
             }
         }
+
+        // update qubits_p[ancilla_index+col_idx]
+        // if Length(columns_of_importance) > 0 {
+        //     for col_idx in 0..Length(columns_of_importance)-1{
+        //         SWAP(temp_qubits_p[columns_of_importance[col_idx]], ancilla[ancilla_index + col_idx]);
+        //     }
+        // }
+
         let temp_row = temp_row + 1;
         let temp_ancilla_index : Int = ancilla_index + Length(columns_of_importance);
+        
         if temp_row < Length(BK_tree){
             BKTree_process(BK_tree, qubits_p, qubits_g, ancilla, temp_ancilla_index, col_length, temp_row);
         }
@@ -184,10 +200,6 @@ operation generate_BrentKung_tree(p_pairs : Qubit[], g_pairs: Qubit[] ) : Unit i
 
         // call recursive function with all the stuff
         BKTree_process(BK_tree, p_pairs, g_pairs, bk_ancilla, ancilla_index, col_length, row);
-
-        Message("No way!");
-
-
 
 
 

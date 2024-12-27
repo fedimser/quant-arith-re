@@ -12,7 +12,7 @@ def setup():
 def test_MultiplySchoolbook(n: int):
     op = "QuantumArithmetic.CG2019.MultiplySchoolbook"
     x, y = random.randint(0, 2**n-1), random.randint(0, 2**n-1)
-    ans = eval(f"TestUtils.TestMultiply({n},{x}L,{y}L,{op})")
+    ans = eval(f"TestUtils.TestMultiply({n},{n},{x}L,{y}L,{op})")
     assert ans == x*y 
 
 
@@ -20,5 +20,5 @@ def test_MultiplySchoolbook(n: int):
 def test_MultiplyKaratsuba(n: int):
     op = "QuantumArithmetic.CG2019.MultiplyKaratsuba"
     x, y = random.randint(0, 2**n-1), random.randint(0, 2**n-1)
-    ans = eval(f"TestUtils.TestMultiply({n},{x}L,{y}L,{op})")
+    ans = eval(f"TestUtils.TestMultiply({n},{n},{x}L,{y}L,{op})")
     assert ans == x*y 

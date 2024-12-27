@@ -11,6 +11,7 @@
       "src/QuantumArithmetic/JHHA2016.qs",
       "src/QuantumArithmetic/NZLS2023.qs",
       "src/QuantumArithmetic/NZLS2023Test.qs",
+      "src/QuantumArithmetic/OFOSG2023.qs",
       "src/QuantumArithmetic/PG2012.qs",
       "src/QuantumArithmetic/PG2012Test.qs",
       "src/QuantumArithmetic/TMVH2019.qs",

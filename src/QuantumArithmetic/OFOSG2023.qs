@@ -6,6 +6,7 @@
 
 import Std.Arrays;
 import Std.Diagnostics.Fact;
+import Std.Math;
 import QuantumArithmetic.Utils.*;
 
 /// Wallace Tree operation.
@@ -40,11 +41,19 @@ function InversePermutation(perm : Int[]) : Int[] {
 }
 
 function ApplyPermToOp(op : WTOp, perm : Int[]) : WTOp {
-    mutable new_args: Int[] = [];
+    mutable new_args : Int[] = [];
     for arg in op.Args {
         set new_args += [perm[arg]];
     }
     return new WTOp { Name = op.Name, Args = new_args };
+}
+
+function MaxGroupLength(groups : Int[][]) : Int {
+    mutable ans : Int = 0;
+    for group in groups {
+        set ans = Math.Max([ans, Length(group)]);
+    }
+    return ans;
 }
 
 /// Computes c:=a&b.
@@ -88,8 +97,41 @@ function BuildWallaceTreeCircuit(n1 : Int, n2 : Int) : WTCircuit {
         }
     }
 
-    Message($"groups {groups}");
-    Message($"ops BEFORE last addition {Length(ops)}");
+    // Add reduction layer, until every group has at most 2 qubits.
+    while (MaxGroupLength(groups) > 2) {
+        let old_max = MaxGroupLength(groups);
+        mutable new_groups : Int[][] = [[], size = n1 + n2];
+        for i in 0..n1 + n2-1 {
+            let old_group : Int[] = groups[i];
+            if (Length(old_group) + Length(new_groups[i]) <= 3 and old_max >= 4) {
+                // Just pass it to the next layer.
+                set new_groups w/= i <- new_groups[i] + old_group;
+            } else {
+                for j in 0..(Length(old_group) / 3)-1 {
+                    // Add full adder.
+                    let triple = old_group[3 * j..3 * j + 2];
+                    let sum_bit = qubit_ctr;
+                    set qubit_ctr += 1;
+                    let carry_bit = triple[2];
+                    set ops += [new WTOp { Name = "FullAdder", Args = [triple[0], triple[1], carry_bit, sum_bit] }];
+                    set new_groups w/= i <- new_groups[i] + [sum_bit];
+                    set new_groups w/= i + 1 <- new_groups[i + 1] + [carry_bit];
+                }
+                let rem = old_group[3 * (Length(old_group) / 3)..Length(old_group)-1];
+                Fact(0 <= Length(rem) and Length(rem) <= 2, "");
+                if (Length(rem) == 1) {
+                    set new_groups w/= i <- new_groups[i] + [rem[0]];
+                } elif (Length(rem) == 2) {
+                    let carry_bit = qubit_ctr;
+                    set qubit_ctr += 1;
+                    set ops += [new WTOp { Name = "HalfAdder", Args = [rem[0], rem[1], carry_bit] }];
+                    set new_groups w/= i <- new_groups[i] + [rem[1]];
+                    set new_groups w/= i + 1 <- new_groups[i + 1] + [carry_bit];
+                }
+            }
+        }
+        set groups = new_groups;
+    }
 
 
     // The last layer is regular addition of 2 binary numbers.
@@ -109,7 +151,7 @@ function BuildWallaceTreeCircuit(n1 : Int, n2 : Int) : WTCircuit {
             }
             set output_bits += [groups[i][1]];
         } else {
-            Fact(Length(groups[i]) == 3, "Unexpected grpup length");
+            Fact(Length(groups[i]) == 3, "Unexpected group length");
             let sum_bit = qubit_ctr;
             set qubit_ctr += 1;
             let carry_bit = groups[i][2];
@@ -118,7 +160,6 @@ function BuildWallaceTreeCircuit(n1 : Int, n2 : Int) : WTCircuit {
             set groups w/= i + 1 <- groups[i + 1] + [carry_bit];
         }
     }
-    Message($"ops AFTER last addition {Length(ops)}");
 
 
     // Remap qubit indexes so outputs are written right after inputs.
@@ -128,10 +169,8 @@ function BuildWallaceTreeCircuit(n1 : Int, n2 : Int) : WTCircuit {
             set perm_before += [i];
         }
     }
-    Message($"perm_before {perm_before}");
     Fact(Length(perm_before) == qubit_ctr, "");
     let perm : Int[] = InversePermutation(perm_before);
-    Message($"perm {perm}");
     Fact(Length(perm) == qubit_ctr, "");
     mutable remapped_ops : WTOp[] = [];
     for op in ops {
@@ -173,7 +212,9 @@ operation MultiplyWallaceTree(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit is A
     }
 }
 
-
+/// Computes C = A*B using Wallace Tree.
+/// Instead of uncomputing ancillas, resets them, which makes this operation 
+/// irreversible.
 operation MultiplyWallaceTreeIrr(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit {
     let n1 = Length(A);
     let n2 = Length(B);

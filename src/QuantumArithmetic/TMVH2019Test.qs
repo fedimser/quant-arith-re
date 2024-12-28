@@ -37,3 +37,19 @@ operation Test_Divide_NonRestoring(n : Int, a_val : BigInt, b_val : BigInt, cfg 
     Fact(new_b_val == b_val, "b was changed.");
     return (q_val, r_val);
 }
+
+operation Run_Restoring(n : Int, adder : (Qubit[], Qubit[]) => Unit is Adj + Ctl) : Unit {
+    let cfg = new Config { Adder = adder };
+    use a = Qubit[n];
+    use b = Qubit[n];
+    use c = Qubit[n];
+    QuantumArithmetic.TMVH2019.Divide_Restoring(a, b, c, cfg);
+}
+
+operation Run_NonRestoring(n : Int, adder : (Qubit[], Qubit[]) => Unit is Adj + Ctl) : Unit {
+    let cfg = new Config { Adder = adder };
+    use a = Qubit[n];
+    use b = Qubit[n];
+    use c = Qubit[n-1];
+    QuantumArithmetic.TMVH2019.Divide_NonRestoring(a, b, c, cfg);
+}

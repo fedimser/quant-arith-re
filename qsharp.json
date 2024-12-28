@@ -16,6 +16,7 @@
       "src/QuantumArithmetic/PG2012Test.qs",
       "src/QuantumArithmetic/TMVH2019.qs",
       "src/QuantumArithmetic/AKBF2011.qs",
+      "src/QuantumArithmetic/AKBF2011Test.qs",
       "src/QuantumArithmetic/TMVH2019Test.qs",
       "src/QuantumArithmetic/TR2009.qs",
       "src/QuantumArithmetic/Utils.qs",

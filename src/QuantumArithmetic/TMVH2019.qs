@@ -5,35 +5,41 @@
 
 import Std.Diagnostics.Fact;
 
-operation Add(xs : Qubit[], ys : Qubit[]) : Unit is Adj + Ctl {
-    Std.Arithmetic.RippleCarryTTKIncByLE(xs, ys);
+
+/// Allows to specify which adder to use.
+struct Config {
+    Adder : (Qubit[], Qubit[]) => Unit is Adj + Ctl,
+}
+
+operation Add(xs : Qubit[], ys : Qubit[], cfg : Config) : Unit is Adj + Ctl {
+    cfg.Adder(xs, ys);
 }
 
 // Computes ys+=xs if ctrl=1, does nothing if ctrl=0.
-operation CtrlAdd(ctrl : Qubit, xs : Qubit[], ys : Qubit[]) : Unit is Adj + Ctl {
-    Controlled Add([ctrl], (xs, ys));
+operation CtrlAdd(ctrl : Qubit, xs : Qubit[], ys : Qubit[], cfg : Config) : Unit is Adj + Ctl {
+    Controlled Add([ctrl], (xs, ys, cfg));
 }
 
 /// Computes ys -= xs by reducing problem to addition and using the Ripple-Carry adder.
 /// Ref: Thapliyal, 2016, https://link.springer.com/chapter/10.1007/978-3-662-50412-3_2
-operation Subtract(xs : Qubit[], ys : Qubit[]) : Unit is Adj + Ctl {
+operation Subtract(xs : Qubit[], ys : Qubit[], cfg : Config) : Unit is Adj + Ctl {
     let ysLen = Length(ys);
     for i in 0..ysLen-1 {
         X(ys[i]);
     }
-    Add(xs, ys);
+    Add(xs, ys, cfg);
     for i in 0..ysLen-1 {
         X(ys[i]);
     }
 }
 
 // Computes ys-=xs if ctrl=1, and ys+=xs if ctrl=0.
-operation AddSub(ctrl : Qubit, xs : Qubit[], ys : Qubit[]) : Unit is Adj + Ctl {
+operation AddSub(ctrl : Qubit, xs : Qubit[], ys : Qubit[], cfg : Config) : Unit is Adj + Ctl {
     let ysLen = Length(ys);
     for i in 0..ysLen-1 {
         CNOT(ctrl, ys[i]);
     }
-    Add(xs, ys);
+    Add(xs, ys, cfg);
     for i in 0..ysLen-1 {
         CNOT(ctrl, ys[i]);
     }
@@ -46,7 +52,7 @@ operation AddSub(ctrl : Qubit, xs : Qubit[], ys : Qubit[]) : Unit is Adj + Ctl {
 ///  * 0 <= a < 2^n.
 ///  * 0 < b < 2^(n-1).
 ///  * c must be initialized to zeros.
-operation Divide_Restoring(a : Qubit[], b : Qubit[], c : Qubit[]) : Unit is Adj + Ctl {
+operation Divide_Restoring(a : Qubit[], b : Qubit[], c : Qubit[], cfg : Config) : Unit is Adj + Ctl {
     let n = Length(a);
     Fact(Length(b) == n, "Registers sizes must match.");
     Fact(Length(c) == n, "Registers sizes must match.");
@@ -55,9 +61,9 @@ operation Divide_Restoring(a : Qubit[], b : Qubit[], c : Qubit[]) : Unit is Adj 
 
     for i in 1..n {
         let Y = Q[n-i..n-1] + R[0..n-1-i];
-        Subtract(b, Y);
+        Subtract(b, Y, cfg);
         CX(Y[n-1], R[n-i]);
-        CtrlAdd(R[n-i], b, Y);
+        CtrlAdd(R[n-i], b, Y, cfg);
         X(R[n-i]);
     }
 }
@@ -69,20 +75,20 @@ operation Divide_Restoring(a : Qubit[], b : Qubit[], c : Qubit[]) : Unit is Adj 
 ///  * 0 <= a < 2^n.
 ///  * 0 < b < 2^(n-1).
 ///  * c must be initialized to zeros.
-operation Divide_NonRestoring(a : Qubit[], b : Qubit[], c : Qubit[]) : Unit is Adj + Ctl {
+operation Divide_NonRestoring(a : Qubit[], b : Qubit[], c : Qubit[], cfg : Config) : Unit is Adj + Ctl {
     let n = Length(a);
     Fact(Length(b) == n, "Registers sizes are incompatible.");
     Fact(Length(c) == n-1, "Registers sizes are incompatible.");
     let R = a[0..n-2];
     let Q = [a[n-1]] + c;
 
-    Subtract(b, Q);
+    Subtract(b, Q, cfg);
     for i in 1..n-1 {
         X(Q[n-i]);
         let Y = R[n-1-i..n-2] + Q[0..n-1-i];
-        AddSub(Q[n-i], b, Y);
+        AddSub(Q[n-i], b, Y, cfg);
     }
-    CtrlAdd(Q[0], b[0..n-2], R);
+    CtrlAdd(Q[0], b[0..n-2], R, cfg);
     X(Q[0]);
 }
 

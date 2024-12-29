@@ -1,3 +1,4 @@
+import QuantumArithmetic.Utils.ParallelX;
 /// Implementation of 2 division algorithms presented in the paper:
 ///   Quantum Circuit Designs of Integer Division Optimizing T-count and T-depth,
 ///   Thapliyal, Munoz-Coreas, Varun, Humble, 2019, https://arxiv.org/pdf/1809.09732.
@@ -23,14 +24,9 @@ operation CtrlAdd(ctrl : Qubit, xs : Qubit[], ys : Qubit[], cfg : Config) : Unit
 /// Computes ys -= xs by reducing problem to addition and using the Ripple-Carry adder.
 /// Ref: Thapliyal, 2016, https://link.springer.com/chapter/10.1007/978-3-662-50412-3_2
 operation Subtract(xs : Qubit[], ys : Qubit[], cfg : Config) : Unit is Adj + Ctl {
-    let ysLen = Length(ys);
-    for i in 0..ysLen-1 {
-        X(ys[i]);
-    }
+    ParallelX(ys);
     Add(xs, ys, cfg);
-    for i in 0..ysLen-1 {
-        X(ys[i]);
-    }
+    ParallelX(ys);
 }
 
 // Computes ys-=xs if ctrl=1, and ys+=xs if ctrl=0.

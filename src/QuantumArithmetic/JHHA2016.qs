@@ -1,4 +1,4 @@
-/// Implementation of the multiplier presented in paper:
+/// Implementation of adder and multiplier presented in paper:
 /// Ancilla-Input and Garbage-Output Optimized Design of a Reversible Quantum Integer Multiplier
 /// Jayashree HV, Himanshu Thapliyal, Hamid R. Arabnia, V K Agrawal, 2016.
 /// https://arxiv.org/abs/1608.01228
@@ -48,4 +48,26 @@ operation Multiply(A : Qubit[], B : Qubit[], P : Qubit[]) : Unit is Adj + Ctl {
     AddNop(P[n-1..2 * n-1], [Zcin] + B, A[n-1]);
 }
 
-export Multiply;
+/// Computes P+=(B+InputCarry) modulo 2^n.
+/// Adapted from AddNop by removing control and output carry.
+operation AddWithInputCarry(P : Qubit[], InputCarry : Qubit, B : Qubit[]) : Unit is Adj + Ctl {
+    let n = Length(B);
+    Fact(Length(P) == n, "Register sizes must match.");
+    let B1 = [InputCarry] + B;
+    for i in 0..n-1 {
+        CNOT(B1[i + 1], P[i]);
+        Controlled SWAP([P[i]], (B1[i], B1[i + 1]));
+    }
+    for i in n-1..-1..0 {
+        Controlled SWAP([P[i]], (B1[i], B1[i + 1]));
+        CNOT(B1[i], P[i]);
+    }
+}
+
+/// Computes B+=A modulo 2^n.
+operation Add_Mod2N(A : Qubit[], B : Qubit[]) : Unit is Adj + Ctl {
+    use Carry = Qubit();
+    AddWithInputCarry(B, Carry, A);
+}
+
+export Multiply, AddWithInputCarry, Add_Mod2N;

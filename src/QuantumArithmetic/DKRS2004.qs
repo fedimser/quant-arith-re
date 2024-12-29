@@ -2,7 +2,7 @@
 ///   A logarithmic-depth quantum carry-lookahead adder.
 ///   Thomas G. Draper, Samuel A. Kutin, Eric M. Rains, Krysta M. Svore.
 ///   https://arxiv.org/abs/quant-ph/0406142
-/// Note that out-of-place adder modulo 2^n from this paper is implemented in 
+/// Note that out-of-place adder modulo 2^n from this paper is implemented in
 /// Std.Arithmetic.LookAheadDKRSAddLE.
 /// This file uses some helpers copied from Std.ArithmeticUtils.
 
@@ -12,17 +12,12 @@ import Std.Diagnostics.Fact;
 import Std.Math.*;
 import QuantumArithmetic.Utils.*;
 
-/// TODO: use ApplyAndAssuming0Target when it becomes intrinsic.
-operation ApplyAndAssuming0Target(control1 : Qubit, control2 : Qubit, target : Qubit) : Unit is Adj + Ctl {
-    CCNOT(control1, control2, target);
-}
-
 /// Copied from Std.ArithmeticUtils.
-operation PRounds(pWorkspace : Qubit[][]) : Unit is Adj + Ctl {
+operation PRounds(pWorkspace : Qubit[][]) : Unit is Adj {
     for ws in Windows(2, pWorkspace) {
         let (current, next) = (Rest(ws[0]), ws[1]);
         for m in IndexRange(next) {
-            ApplyAndAssuming0Target(current[2 * m], current[2 * m + 1], next[m]);
+            AND(current[2 * m], current[2 * m + 1], next[m]);
         }
     }
 }
@@ -56,7 +51,7 @@ operation CRounds(pWorkspace : Qubit[][], gs : Qubit[]) : Unit is Adj + Ctl {
 
 /// Circuit from §3.
 /// Copied from Std.ArithmeticUtils.
-operation ComputeCarries(ps : Qubit[], gs : Qubit[]) : Unit is Adj + Ctl {
+operation ComputeCarries(ps : Qubit[], gs : Qubit[]) : Unit is Adj {
     let n = Length(gs);
     Fact(Length(ps) + 1 == n, "Register gs must be one qubit longer than register gs.");
     let T = Floor(Lg(IntAsDouble(n)));
@@ -74,15 +69,15 @@ operation ComputeCarries(ps : Qubit[], gs : Qubit[]) : Unit is Adj + Ctl {
 /// Algorithm from §4.2.
 /// If Length(Z)==n, does addition with carry, using Z[n-1] as carry bit.
 /// If Length(Z)==n-1, does addition without carry.
-operation InPlaceAddHelper(A : Qubit[], B : Qubit[], Z: Qubit[]) : Unit is Adj + Ctl {
+operation InPlaceAddHelper(A : Qubit[], B : Qubit[], Z : Qubit[]) : Unit is Adj {
     let n = Length(A);
     Fact(Length(B) == n, "Size mismatch.");
     Fact(Length(B) == n, "Size mismatch.");
     let Zn = Length(Z);
-    Fact(Zn == n or Zn==n-1, "Size mismatch.");
-    
+    Fact(Zn == n or Zn == n-1, "Size mismatch.");
+
     for i in 0..Zn - 1 {
-        ApplyAndAssuming0Target(A[i], B[i], Z[i]);
+        AND(A[i], B[i], Z[i]);
     }
     ParallelCNOT(A, B);
     if n > 1 {
@@ -96,22 +91,23 @@ operation InPlaceAddHelper(A : Qubit[], B : Qubit[], Z: Qubit[]) : Unit is Adj +
     }
     ParallelCNOT(A[1..n-2], B[1..n-2]);
     for i in 0..n - 2 {
-        Adjoint ApplyAndAssuming0Target(A[i], B[i], Z[i]);
+        Adjoint AND(A[i], B[i], Z[i]);
     }
     ParallelX(B[0..n-2]);
 }
 
 /// Computes B+=A mod (2^n).
-operation Add(A : Qubit[], B : Qubit[]) : Unit is Adj + Ctl {
+/// TODO: remove "v2".
+operation Add_v2(A : Qubit[], B : Qubit[]) : Unit is Adj {
     use Z = Qubit[Length(A)-1];
     InPlaceAddHelper(A, B, Z);
 }
 
 /// Computes B+=A mod (2^n), Carry=(A+B)/(2^n).
 /// Carry must be prepared in zero state.
-operation AddWithCarry(A : Qubit[], B : Qubit[], Carry: Qubit) : Unit is Adj + Ctl {
+operation AddWithCarry(A : Qubit[], B : Qubit[], Carry : Qubit) : Unit is Adj {
     use Z = Qubit[Length(A)-1];
     InPlaceAddHelper(A, B, Z + [Carry]);
 }
 
-export Add, AddWithCarry;
+export Add_v2, AddWithCarry;

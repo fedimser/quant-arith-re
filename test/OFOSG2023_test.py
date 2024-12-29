@@ -13,7 +13,7 @@ def setup():
     (6, 8), (8, 8), (16, 16), (5, 16), (32, 32),
 ])
 @pytest.mark.parametrize("op", [
-    "QuantumArithmetic.OFOSG2023.MultiplyWallaceTree",
+    "QuantumArithmetic.OFOSG2023.MultiplyWallaceTree_v2",
     "QuantumArithmetic.OFOSG2023.MultiplyWallaceTreeIrr",
 ])
 def test_MultiplyWallaceTree(n1: int, n2: int, op: str):

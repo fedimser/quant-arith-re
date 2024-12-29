@@ -10,7 +10,7 @@ def setup():
 
 @pytest.mark.parametrize("n", [1, 2, 3, 4, 5, 8, 16, 31, 32, 63])
 def test_Add(n: int):
-    op = "QuantumArithmetic.DKRS2004.Add"
+    op = "QuantumArithmetic.DKRS2004.Add_v2"
     for _ in range(5):
         a = random.randint(0, 2**n-1)
         b = random.randint(0, 2**n-1)

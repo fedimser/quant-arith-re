@@ -34,3 +34,14 @@ def test_ModAdd(n: int):
         op = f"QuantumArithmetic.LYY2021.ModAdd(_,_,{N}L)"
         ans = eval(f"TestUtils.BinaryOpInPlace({n},{x}L,{y}L,{op})")
         assert ans == (x+y) % N
+
+
+@pytest.mark.parametrize("n", [2, 3, 4, 5, 6, 10, 20, 32])
+def test_ModDbl(n: int):
+    for _ in range(10):
+        N = 1+2*random.randint(1, 2**(n-1)-1)
+        x = random.randint(0, N-1)
+        # print(f"n={n} N={N}")
+        op = f"QuantumArithmetic.LYY2021.ModDbl(_,{N}L)"
+        ans = eval(f"TestUtils.UnaryOpInPlace({n},{x}L,{op})")
+        assert ans == (2*x) % N

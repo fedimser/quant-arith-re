@@ -56,11 +56,6 @@ function MaxGroupLength(groups : Int[][]) : Int {
     return ans;
 }
 
-/// Computes c:=a&b.
-operation AndGate(a : Qubit, b : Qubit, c : Qubit) : Unit is Adj + Ctl {
-    CCNOT(a, b, c);
-}
-
 /// Computes c,d=MAJ(a,b,c),a⊕b⊕c.
 /// Alowed to do anything with a,b.
 /// TODO: extend so we can use Wang adder (fig 5(a)).
@@ -178,11 +173,11 @@ function BuildWallaceTreeCircuit(n1 : Int, n2 : Int) : WTCircuit {
     return new WTCircuit { N1 = n1, N2 = n1, TotalQubits = qubit_ctr, Ops = remapped_ops };
 }
 
-operation ApplyWallaceTreeCircuit(circuit : WTCircuit, qs : Qubit[]) : Unit is Adj + Ctl {
+operation ApplyWallaceTreeCircuit(circuit : WTCircuit, qs : Qubit[]) : Unit is Adj {
     Fact(Length(qs) == circuit.TotalQubits, "Size mismatch");
     for op in circuit.Ops {
         if op.Name == "AND" {
-            AndGate(qs[op.Args[0]], qs[op.Args[1]], qs[op.Args[2]]);
+            AND(qs[op.Args[0]], qs[op.Args[1]], qs[op.Args[2]]);
         } elif op.Name == "FullAdder" {
             FullAdder(qs[op.Args[0]], qs[op.Args[1]], qs[op.Args[2]], qs[op.Args[3]]);
         } elif op.Name == "HalfAdder" {
@@ -195,7 +190,8 @@ operation ApplyWallaceTreeCircuit(circuit : WTCircuit, qs : Qubit[]) : Unit is A
 }
 
 /// Computes C = A*B using Wallace Tree.
-operation MultiplyWallaceTree(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit is Adj + Ctl {
+/// TODO: remove "v2".
+operation MultiplyWallaceTree_v2(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit is Adj + Ctl {
     let n1 = Length(A);
     let n2 = Length(B);
     Fact(Length(C) == n1 + n2, "Size mismatch");
@@ -211,7 +207,7 @@ operation MultiplyWallaceTree(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit is A
 }
 
 /// Computes C = A*B using Wallace Tree.
-/// Instead of uncomputing ancillas, resets them, which makes this operation 
+/// Instead of uncomputing ancillas, resets them, which makes this operation
 /// irreversible.
 operation MultiplyWallaceTreeIrr(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit {
     let n1 = Length(A);
@@ -223,3 +219,5 @@ operation MultiplyWallaceTreeIrr(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit {
     ApplyWallaceTreeCircuit(circuit, A + B + C + ancillas);
     ResetAll(ancillas);
 }
+
+export MultiplyWallaceTree_v2, MultiplyWallaceTreeIrr;

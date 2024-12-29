@@ -30,6 +30,29 @@ def test_CyclicShiftRight(n: int):
         expected = (x >> (n-r1)) + ((x % (2**(n-r1))) << r1)
         assert ans == expected
 
+
+@pytest.mark.parametrize("n", [1, 2, 3, 4, 5, 8, 16, 31, 32, 62])
+def test_AddMod2nm1OutOfPlace(n: int):
+    MOD = 2**n-1
+    op = "QuantumArithmetic.NZLS2023.AddMod2nm1OutOfPlace"
+    for _ in range(5):
+        a = random.randint(0, 2**n-1)
+        b = random.randint(0, 2**n-1)
+        ans = eval(f"TestUtils.BinaryOp({n},{a}L,{b}L,{op})")
+        assert ans % MOD == (a+b) % MOD
+
+
+@pytest.mark.parametrize("n", [1, 2, 3, 4, 5, 8, 16, 31, 32, 62])
+def test_AddMod2nm1InPlace(n: int):
+    MOD = 2**n-1
+    op = "QuantumArithmetic.NZLS2023.AddMod2nm1InPlace"
+    for _ in range(5):
+        a = random.randint(0, 2**n-1)
+        b = random.randint(0, 2**n-1)
+        ans = eval(f"TestUtils.BinaryOpInPlace({n},{a}L,{b}L,{op})")
+        assert ans % MOD == (a+b) % MOD
+
+
 @pytest.mark.parametrize("n", [2, 4, 6, 8, 16, 32, 64])
 def test_Butterfly(n: int):
     assert n % 2 == 0
@@ -41,5 +64,4 @@ def test_Butterfly(n: int):
         ans1, ans2 = eval(f"{op}({n},{a}L,{b}L)")
         print("N=", N)
         assert ans1 % N == (a+b) % N
-        # TODO: fix adder so this assertion passed.
-        # assert ans2 % N == (a-b) % N   
+        assert ans2 % N == (a-b) % N

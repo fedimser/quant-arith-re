@@ -1,4 +1,3 @@
-import Std.Arrays.ForEach;
 /// Implementation of the multiplier presented in paper:
 ///   Quantum Circuit Design for Integer Multiplication Based on Schönhage-Strassen Algorithm
 ///   Junhong Nie, Qinlin Zhu, Meng Li, Xiaoming Sun, 2023.
@@ -6,7 +5,9 @@ import Std.Arrays.ForEach;
 /// All numbers are unsigned integers, little-endian.
 ///
 /// WARNING! This code is not finished.
+
 import Std.Diagnostics.Fact;
+import QuantumArithmetic.AdditionOrig;
 import QuantumArithmetic.CDKM2004;
 import QuantumArithmetic.Utils;
 
@@ -40,66 +41,6 @@ operation CyclicShiftRight(A : Qubit[], r : Int) : Unit is Adj {
     Utils.ApplyPermutation(A, perm);
 }
 
-/// Computes carries array given A, B and C[0].
-/// By definition, C[i+1]=MAJ(A[i], B[i], C[i]).
-/// Answer is C[1..n], which must be prepared in 0 state.
-operation ComputeCarriesSimple(A : Qubit[], B : Qubit[], C : Qubit[]): Unit is Adj + Ctl  {
-    let n = Length(A);
-    Fact(Length(B) == n, "Size mismatch.");
-    Fact(Length(C) == n+1, "Size mismatch.");
-    for i in 0..n-1 {
-        within{
-            Std.Arithmetic.MAJ(A[i], B[i], C[i]);
-        } apply {
-            CNOT(C[i], C[i+1]);
-        }
-    }
-}
-
-/// Computes (A+B)/2^n.
-operation ComputeOverflowBitSimple(A : Qubit[], B : Qubit[], Carry : Qubit): Unit is Adj + Ctl {
-    let n = Length(A);
-    Fact(Length(B) == n, "Size mismatch.");
-    use C = Qubit[n+1];
-    within {
-        ComputeCarriesSimple(A,B,C);
-    } apply {
-        CNOT(C[n], Carry);
-    }
-}
-
-/// Computes C:=(A+B)%(2^n-1).
-/// WARNING: this is inefficient (O(n) depth) implementation.
-operation AddMod2nm1OutOfPlace(A : Qubit[], B : Qubit[], C : Qubit[]): Unit is Adj + Ctl {
-    let n = Length(A);
-    Fact(Length(B) == n, "Size mismatch.");
-    Fact(Length(C) == n, "Size mismatch.");
-    ComputeOverflowBitSimple(A, B, C[0]);
-    ComputeCarriesSimple(A[0..n-2], B[0..n-2], C);
-    Utils.ParallelCNOT(A, C);
-    Utils.ParallelCNOT(B, C);
-}
-
-/// Computes B:=(A+B)%(2^n-1).
-/// WARNING: this is inefficient (O(n) depth) implementation.
-/// The paper instructs to use mod-(2^n-1) adder from the DKRS2004 paper, but 
-/// that paper doesn't have sufficient information to implement it, so we 
-/// temporarily use more straightforward algorithm.
-/// The idea of the algorithm is:
-///   1. Compute C0=(A+B)/2^n (carry-out/overflow bit).
-///   2. Compute 
-/// TODO: try to implement efficient algorithm as described in DKRS2004 paper.
-operation AddMod2nm1InPlace(A : Qubit[], B : Qubit[]) : Unit {
-    let n = Length(A);
-    Fact(Length(B) == n, "Size mismatch.");
-    use C = Qubit[n];
-    ComputeOverflowBitSimple(A, B, C[0]);
-    ComputeCarriesSimple(A[0..n-2], B[0..n-2], C);
-    Utils.ParallelCNOT(A, B);
-    Utils.ParallelCNOT(C, B);
-    ResetAll(C);
-}
-
 // Buttefly operation from §III-C-1, Fig.3.
 // Computes (A,B) := (A+B, A-B) modulo N=(2^n')+1.
 // A and B are 2n'-bit numbers.
@@ -108,12 +49,12 @@ operation AddMod2nm1InPlace(A : Qubit[], B : Qubit[]) : Unit {
 operation Butterfly(A : Qubit[], B : Qubit[]) : Unit {
     let len = Length(A); // len = 2n'.
     Fact(Length(B) == len, "|B|=2n'");
-    AddMod2nm1InPlace(B, A);
+    AdditionOrig.AddMod2NMinus1InPlace(B, A);
     for i in 0..len-1 {
         X(B[i]);
     }
     CyclicShiftRight(B, 1);
-    AddMod2nm1InPlace(A, B);
+    AdditionOrig.AddMod2NMinus1InPlace(A, B);
 }
 
 // FFT circuit from §III-C-2, Fig.4.

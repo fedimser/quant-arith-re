@@ -31,28 +31,6 @@ def test_CyclicShiftRight(n: int):
         assert ans == expected
 
 
-@pytest.mark.parametrize("n", [1, 2, 3, 4, 5, 8, 16, 31, 32, 62])
-def test_AddMod2nm1OutOfPlace(n: int):
-    MOD = 2**n-1
-    op = "QuantumArithmetic.NZLS2023.AddMod2nm1OutOfPlace"
-    for _ in range(5):
-        a = random.randint(0, 2**n-1)
-        b = random.randint(0, 2**n-1)
-        ans = eval(f"TestUtils.BinaryOp({n},{a}L,{b}L,{op})")
-        assert ans % MOD == (a+b) % MOD
-
-
-@pytest.mark.parametrize("n", [1, 2, 3, 4, 5, 8, 16, 31, 32, 62])
-def test_AddMod2nm1InPlace(n: int):
-    MOD = 2**n-1
-    op = "QuantumArithmetic.NZLS2023.AddMod2nm1InPlace"
-    for _ in range(5):
-        a = random.randint(0, 2**n-1)
-        b = random.randint(0, 2**n-1)
-        ans = eval(f"TestUtils.BinaryOpInPlace({n},{a}L,{b}L,{op})")
-        assert ans % MOD == (a+b) % MOD
-
-
 @pytest.mark.parametrize("n", [2, 4, 6, 8, 16, 32, 64])
 def test_Butterfly(n: int):
     assert n % 2 == 0

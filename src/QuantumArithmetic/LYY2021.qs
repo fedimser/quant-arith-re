@@ -22,48 +22,41 @@ operation Add(A : Qubit[], B : Qubit[]) : Unit is Adj + Ctl {
 
 /// Computes X+=A modulo 2^n.
 operation AddConstant(A : BigInt, B : Qubit[]) : Unit is Adj + Ctl {
-    IncByLUsingIncByLE(Add, A, B);
-}
-
-/// Computes B+=ctrl*A modulo 2^n.
-operation CtrlAdd(ctrl : Qubit, A : Qubit[], B : Qubit[]) : Unit is Adj + Ctl {
-    Controlled Add([ctrl], (A, B));
-}
-
-/// Computes X+=ctrl*A modulo 2^n.
-operation CtrlAddConstant(ctrl : Qubit, A : BigInt, B : Qubit[]) : Unit is Adj + Ctl {
-    if A != 0L {
-        let j = TrailingZeroCountL(A);
-        if (j > 0) {
-            CtrlAddConstant(ctrl, A >>> j, B[j...]);
-        } else {
-            use Atmp = Qubit[Length(B)];
+    body (...) {
+        IncByLUsingIncByLE(Add, A, B);
+    }
+    controlled (controls, ...) {
+        if A != 0L {
+            let n = Length(B);
+            let j = TrailingZeroCountL(A);
+            use Atmp = Qubit[n - j];
             within {
-                Controlled ApplyXorInPlaceL([ctrl], (A, Atmp));
+                Controlled ApplyXorInPlaceL(controls, (A >>> j, Atmp));
             } apply {
-                Add(Atmp, B);
+                Add(Atmp, B[j...]);
             }
         }
     }
 }
 
-operation CompareHelper(A : Qubit[], B : Qubit[], Anc : Qubit) : Unit is Adj + Ctl {
-    let n = Length(A);
-    Fact(Length(B) == n, "Size mismatch.");
-    Utils.ParallelX(B);
-    Std.Arithmetic.MAJ(Anc, A[0], B[0]);
-    for i in 1..n-1 {
-        Std.Arithmetic.MAJ(B[i-1], A[i], B[i]);
-    }
-}
-
 /// Computes Ans ⊕= [A>B].
 operation Compare(A : Qubit[], B : Qubit[], Ans : Qubit) : Unit is Adj + Ctl {
-    use Anc = Qubit();
-    within {
-        CompareHelper(A, B, Anc);
-    } apply {
-        CNOT(Tail(B), Ans);
+    body (...) {
+        Controlled Compare([], (A, B, Ans));
+    }
+    controlled (controls, ...) {
+        let n = Length(A);
+        Fact(Length(B) == n, "Size mismatch.");
+        use Anc = Qubit();
+        within {
+            Utils.ParallelX(B);
+            Std.Arithmetic.MAJ(Anc, A[0], B[0]);
+            for i in 1..n-1 {
+                Std.Arithmetic.MAJ(B[i-1], A[i], B[i]);
+            }
+        } apply {
+            Controlled CNOT(controls, (B[n-1], Ans));
+        }
     }
 }
 
@@ -74,16 +67,6 @@ operation CompareByConst(A : BigInt, B : Qubit[], Ans : Qubit) : Unit is Adj + C
         ApplyXorInPlaceL((A, Atmp));
     } apply {
         Compare(Atmp, B, Ans);
-    }
-}
-
-/// Computes Ans ⊕= ctrl*[A>B].
-operation CtrlCompare(ctrl : Qubit, A : Qubit[], B : Qubit[], Ans : Qubit) : Unit is Adj + Ctl {
-    use Anc = Qubit();
-    within {
-        CompareHelper(A, B, Anc);
-    } apply {
-        CCNOT(ctrl, Tail(B), Ans);
     }
 }
 
@@ -99,30 +82,30 @@ operation LeftShift(B : Qubit[]) : Unit is Adj + Ctl {
 
 /// Computes B:=(A+B)%N.
 /// Must be 0 <= A,B < N < 2^N.
-/// Figure 8 in the paper.
+/// Figures 8 and 9 in the paper.
 operation ModAdd(A : Qubit[], B : Qubit[], N : BigInt) : Unit is Adj + Ctl {
-    let n = Length(A);
-    Fact(Length(B) == n, "Size mismatch.");
-    Fact(N >= 2L, "N must be at least 2.");
-    Fact(N < 1L <<< n, "N is too large.");
-    use Anc = Qubit[n + 2];
-
-    CDKM2004.AddWithCarry(A, B, Anc[n]);
-    CompareByConst(N, B, Anc[n]);
-    CNOT(Anc[n], Anc[n + 1]);
-    CNOT(Anc[n + 1], Anc[n]);
-    X(Anc[n + 1]);
-    within {
-        Controlled ApplyXorInPlaceL([Anc[n + 1]], (N, Anc[0..n-1]));
-    } apply {
-        Adjoint CDKM2004.Add(Anc[0..n-1], B);
+    body (...) {
+        Controlled ModAdd([], (A, B, N));
     }
-    Compare(A, B, Anc[n + 1]);
-}
+    controlled (controls, ...) {
+        let n = Length(A);
+        Fact(Length(B) == n, "Size mismatch.");
+        Fact(N >= 2L, "N must be at least 2.");
+        Fact(N < 1L <<< n, "N is too large.");
+        use Anc = Qubit[n + 2];
 
-/// Figure 9 in the paper.
-operation CtrlModAdd(ctrl : Qubit, A : Qubit[], B : Qubit[], N : BigInt) : Unit is Adj + Ctl {
-    // TODO: implement.
+        Controlled CDKM2004.AddWithCarry(controls, (A, B, Anc[n]));
+        CompareByConst(N, B, Anc[n]);
+        CNOT(Anc[n], Anc[n + 1]);
+        CNOT(Anc[n + 1], Anc[n]);
+        X(Anc[n + 1]);
+        within {
+            Controlled ApplyXorInPlaceL([Anc[n + 1]], (N, Anc[0..n-1]));
+        } apply {
+            Adjoint CDKM2004.Add(Anc[0..n-1], B);
+        }
+        Controlled Compare(controls, (A, B, Anc[n + 1]));
+    }
 }
 
 /// Computes A:=(2*A)%N.
@@ -144,4 +127,20 @@ operation ModDbl(A : Qubit[], N : BigInt) : Unit is Adj + Ctl {
         Adjoint CDKM2004.AddWithCarry(Anc[0..n-1], A, Anc[n]);
     }
     CNOT(A[0], Anc[n + 1]);
+}
+
+/// Fast modular multiplication.
+/// Computes C:=(A*B)%N.
+/// C must be prepared in zero state.
+/// Figure 15 in the paper.
+operation ModMulFast(A : Qubit[], B : Qubit[], C : Qubit[], N : BigInt) : Unit is Adj + Ctl {
+    let n = Length(A);
+    Fact(Length(B) == n, "Size mismatch.");
+    for i in 0..n-1 {
+        CCNOT(A[n-1], B[i], C[i]);
+    }
+    for i in n-2..-1..0 {
+        ModDbl(C, N);
+        Controlled ModAdd([A[i]], (B, C, N));
+    }
 }

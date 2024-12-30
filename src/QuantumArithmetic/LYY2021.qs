@@ -1,14 +1,20 @@
+import Std.Diagnostics.DumpMachine;
+import Std.Diagnostics.DumpOperation;
 import QuantumArithmetic.CDKM2004.AddWithCarry;
 /// Implementation of operations presented in paper:
 ///   CNOT-count optimized quantum circuit of the Shor’s algorithm
 ///   Xia Liu, Huan Yang, Li Yang, 2021.
 ///   https://arxiv.org/abs/2112.11358
 /// All numbers are unsigned integers, little-endian.
+///
+/// TODO: implement other ideas from the paper:
+///   1. Windowed.
+///   2. Montgomery (fig 16-17).
+///   3. Intermediate data accumulation (fig 12).
 
 import Std.Arithmetic.IncByLUsingIncByLE;
-import Std.Arrays.*;
 import Std.Diagnostics.Fact;
-import Std.Math.*;
+import Std.Math;
 
 import QuantumArithmetic.CDKM2004;
 import QuantumArithmetic.AdditionOrig;
@@ -21,6 +27,7 @@ operation Add(A : Qubit[], B : Qubit[]) : Unit is Adj + Ctl {
 }
 
 /// Computes X+=A modulo 2^n.
+/// Figures 5, 6 from the paper.
 operation AddConstant(A : BigInt, B : Qubit[]) : Unit is Adj + Ctl {
     body (...) {
         IncByLUsingIncByLE(Add, A, B);
@@ -28,7 +35,7 @@ operation AddConstant(A : BigInt, B : Qubit[]) : Unit is Adj + Ctl {
     controlled (controls, ...) {
         if A != 0L {
             let n = Length(B);
-            let j = TrailingZeroCountL(A);
+            let j = Math.TrailingZeroCountL(A);
             use Atmp = Qubit[n - j];
             within {
                 Controlled ApplyXorInPlaceL(controls, (A >>> j, Atmp));
@@ -111,6 +118,7 @@ operation ModAdd(A : Qubit[], B : Qubit[], N : BigInt) : Unit is Adj + Ctl {
 /// Computes A:=(2*A)%N.
 /// Must be 0 <= A < N < 2^n. N must be odd.
 /// Figure 11 in the paper.
+// TODO: custom CONTROLLED, controlling only LeftShift and last CNOT.
 operation ModDbl(A : Qubit[], N : BigInt) : Unit is Adj + Ctl {
     let n = Length(A);
     Fact(N >= 3L, "N must be at least 3.");
@@ -131,16 +139,59 @@ operation ModDbl(A : Qubit[], N : BigInt) : Unit is Adj + Ctl {
 
 /// Fast modular multiplication.
 /// Computes C:=(A*B)%N.
+/// Must be 0 <= B < N < 2^n.
 /// C must be prepared in zero state.
 /// Figure 15 in the paper.
 operation ModMulFast(A : Qubit[], B : Qubit[], C : Qubit[], N : BigInt) : Unit is Adj + Ctl {
-    let n = Length(A);
-    Fact(Length(B) == n, "Size mismatch.");
-    for i in 0..n-1 {
-        CCNOT(A[n-1], B[i], C[i]);
+    let n1 = Length(A);
+    let n2 = Length(B);
+    Fact(Length(C) == n2, "Size mismatch.");
+    for i in 0..n2-1 {
+        CCNOT(A[n1-1], B[i], C[i]);
     }
-    for i in n-2..-1..0 {
+    for i in n1-2..-1..0 {
         ModDbl(C, N);
         Controlled ModAdd([A[i]], (B, C, N));
+    }
+}
+
+/// Modular multiplication by a constant, based on ModMulFast.
+/// Computes C:=(A*B)%N.
+/// C must be prepared in zero state.
+/// Figure 15 in the paper, considering x to be classical bits.
+operation ModMulByConstFast(B : Qubit[], C : Qubit[], A : BigInt, N : BigInt) : Unit is Adj + Ctl {
+    let A = ((A % N) + N) % N;
+    if (A != 0L) {
+        let n1 = Utils.FloorLog2(A) + 1;
+        let A_bits = Std.Convert.BigIntAsBoolArray(A, n1);
+        let n2 = Length(B);
+        Fact(Length(C) == n2, "Size mismatch.");
+        Utils.ParallelCNOT(B, C);
+        for i in n1-2..-1..0 {
+            ModDbl(C, N);
+            if (A_bits[i]) {
+                ModAdd(B, C, N);
+            }
+        }
+    }
+}
+
+/// Computes Ans=(a^x)%N.
+/// Ans must be prepared in zero state.
+/// a must be co-prime with N.
+/// Doesn't change x.
+/// Figure 4 in the paper.
+operation ModExp(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
+    let n1 = Length(x);
+    let n2 = Length(Ans);
+    let a_sqs = Utils.ComputeSequentialSquares(a, N, n1);
+    let a_inv_sqs = Utils.ComputeSequentialSquares(Utils.ModInv(a, N), N, n1);
+
+    use Anc = Qubit[n2];
+    X(Ans[0]); // Ans:=1.
+    for i in 0..n1-1 {
+        Controlled ModMulByConstFast([x[i]], (Ans, Anc, a_sqs[i], N));
+        Controlled Utils.ParallelSWAP([x[i]], (Ans, Anc));
+        Adjoint Controlled ModMulByConstFast([x[i]], (Ans, Anc, a_inv_sqs[i], N));
     }
 }

@@ -118,6 +118,16 @@ operation TestMultiply(a_size : Int, b_size : Int, a_val : BigInt, b_val : BigIn
     return MeasureBigInt(ans);
 }
 
+/// Calculates (a^x)%N using given operation.
+operation TestModExp(n : Int, a : BigInt, x : BigInt, N : BigInt, op : (Qubit[], Qubit[], BigInt, BigInt) => Unit) : Int {
+    use ans = Qubit[n];
+    use x_qubits = Qubit[n];
+    ApplyBigInt(x, x_qubits);
+    op(x_qubits, ans, a, N);
+    Fact(MeasureBigInt(x_qubits) == x, "Register x was changed.");
+    return MeasureInteger(ans);
+}
+
 // n is number of bits per register.
 // Returns pair (a_val/b_val, a_val%b_val).
 operation Test_Divide_Restoring(n : Int, a_val : Int, b_val : Int, op : (Qubit[], Qubit[], Qubit[]) => Unit) : (Int, Int) {

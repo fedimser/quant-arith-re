@@ -60,7 +60,8 @@ def test_MUL_MOD():
         assert ans == (i*5) % 7
 
 
-@pytest.mark.parametrize("n,a,b,mod", [(2, 2, 2, 3), (3, 6, 5, 7)])
-def test_EXP_MOD(n, a, b, mod):
-    ans = eval(f"QuantumArithmetic.PG2012Test.TestEXP_MOD({n},{a},{b},{mod})")
-    assert ans == (a**b) % mod
+@pytest.mark.parametrize("n,a,b,N", [(2, 2, 2, 3), (3, 6, 5, 7)])
+def test_EXP_MOD(n, a, b, N):
+    op = "QuantumArithmetic.PG2012.EXP_MOD"
+    ans = eval(f"TestUtils.TestModExp({n},{a}L,{b}L,{N}L,{op})")
+    assert ans == (a**b) % N

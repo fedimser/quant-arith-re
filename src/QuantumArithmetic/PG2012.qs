@@ -285,37 +285,31 @@ operation FMAC_MOD2(
     }
 }
 
-// Modular exponentiation. (ΦMUL MOD2, §6).
+// Modular multiplication. (ΦMUL MOD2, §6).
 // Computes y:=(a*y)%N ig c=1. Does nothing if c=0.
 // It must be guaranteed that N<2^n; (a*y)/N < 2^n; a is co-prime with N.
 operation FMUL_MOD2(c : Qubit, y : Qubit[], a : BigInt, N : BigInt) : Unit is Ctl + Adj {
-    Fact(Math.IsCoprimeL(a, N), "a and N must be coprime.");
-    let (a_inv, unused_v) = Math.ExtendedGreatestCommonDivisorL(a, N);
-    let a_inv : BigInt = ((a_inv % N) + N) % N;
-    Fact(1L <= a_inv and a_inv < N, "a_inv out of bound");
-    Fact((a * a_inv) % N == 1L, "a_inv is computed incorrectly");
-
+    let a_inv = Utils.ModInv(a, N);
     let n = Length(y);
     use ans = Qubit[n];
 
     FMAC_MOD2(c, y, ans, a, N);
-    for i in 0..n-1 {
-        Controlled SWAP([c], (y[i], ans[i]));
-    }
+    Controlled Utils.ParallelSWAP([c], (y, ans));
     Adjoint FMAC_MOD2(c, y, ans, a_inv, N);
 }
 
+// Modular exponentiation.
 // Computes y=(a^x)%N.
 // y must be prepared in zero state.
 // Doesn't change x.
 // Sizes of x and y don't necessarily have to match.
 // a must be co-prime with N.
-operation EXP_MOD(x : Qubit[], y : Qubit[], a : BigInt, N : BigInt) : Unit is Ctl {
-    mutable a_cur : BigInt = a;
+operation EXP_MOD(x : Qubit[], y : Qubit[], a : BigInt, N : BigInt) : Unit is Ctl + Adj {
+    let n = Length(x);
+    let a_sqs = Utils.ComputeSequentialSquares(a, N, n);
     X(y[0]); // y:=1.
     for i in 0..Length(x)-1 {
-        FMUL_MOD2(x[i], y, a_cur, N);
-        set a_cur = (a_cur * a_cur) % N;
+        FMUL_MOD2(x[i], y, a_sqs[i], N);
     }
 }
 

@@ -146,14 +146,18 @@ operation Test_Divide_Restoring(n : Int, a_val : Int, b_val : Int, op : (Qubit[]
     return (q_val, new_a_val);
 }
 
-operation BinaryOpInPlaceRadix(n : Int, x_val : Int, y_val : Int, radix : Int, op : (Qubit[], Qubit[], Int) => Unit) : Int {
+operation BinaryOpInPlaceRadix(n : Int, x_val : Int, y_val : Int, radix : Int, op : (Qubit[], Qubit[], Qubit[], Int) => Unit) : Int {
+    Message($"x_val={x_val} y_val={y_val}");
     use x = Qubit[n];
     use y = Qubit[n];
+    use g = Qubit[n];
     ApplyPauliFromInt(PauliX, true, x_val, x);
     ApplyPauliFromInt(PauliX, true, y_val, y);
-    op(x, y, radix);
+    op(x, y, g, radix);
     let new_x = MeasureInteger(x);
     Fact(new_x == x_val, "x was changed.");
     let ans = MeasureInteger(y);
+    let new_g = MeasureInteger(g);
+    Message($"x={new_x} y={ans} g={new_g}");
     return ans;
 }

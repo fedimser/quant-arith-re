@@ -118,7 +118,6 @@ operation ModAdd(A : Qubit[], B : Qubit[], N : BigInt) : Unit is Adj + Ctl {
 /// Computes A:=(2*A)%N.
 /// Must be 0 <= A < N < 2^n. N must be odd.
 /// Figure 11 in the paper.
-// TODO: custom CONTROLLED, controlling only LeftShift and last CNOT.
 operation ModDbl(A : Qubit[], N : BigInt) : Unit is Adj + Ctl {
     let n = Length(A);
     Fact(N >= 3L, "N must be at least 3.");
@@ -160,17 +159,22 @@ operation ModMulFast(A : Qubit[], B : Qubit[], C : Qubit[], N : BigInt) : Unit i
 /// C must be prepared in zero state.
 /// Figure 15 in the paper, considering x to be classical bits.
 operation ModMulByConstFast(B : Qubit[], C : Qubit[], A : BigInt, N : BigInt) : Unit is Adj + Ctl {
-    let A = ((A % N) + N) % N;
-    if (A != 0L) {
-        let n1 = Utils.FloorLog2(A) + 1;
-        let A_bits = Std.Convert.BigIntAsBoolArray(A, n1);
-        let n2 = Length(B);
-        Fact(Length(C) == n2, "Size mismatch.");
-        Utils.ParallelCNOT(B, C);
-        for i in n1-2..-1..0 {
-            ModDbl(C, N);
-            if (A_bits[i]) {
-                ModAdd(B, C, N);
+    body (...) {
+        Controlled ModMulByConstFast([], (B, C, A, N));
+    }
+    controlled (controls, ...) {
+        let A = ((A % N) + N) % N;
+        if (A != 0L) {
+            let n1 = Utils.FloorLog2(A) + 1;
+            let A_bits = Std.Convert.BigIntAsBoolArray(A, n1);
+            let n2 = Length(B);
+            Fact(Length(C) == n2, "Size mismatch.");
+            Controlled Utils.ParallelCNOT(controls, (B, C));
+            for i in n1-2..-1..0 {
+                ModDbl(C, N);
+                if (A_bits[i]) {
+                    Controlled ModAdd(controls, (B, C, N));
+                }
             }
         }
     }

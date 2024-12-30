@@ -5,6 +5,7 @@
 /// All numbers are unsigned integers, little-endian.
 ///
 /// WARNING! This code is not finished.
+/// It's blocked on reversible implementation of addition mod 2^n-1.
 
 import Std.Diagnostics.Fact;
 import QuantumArithmetic.AdditionOrig;
@@ -18,8 +19,8 @@ import QuantumArithmetic.Utils;
 /// The paper instructs to use here the adder from Cuccaro-2004 paper, which is
 /// implemented in CDKM2004.qs.
 /// WARNING. This algorithm is correct, but very inefficient, as it contains
-/// triple-controlled gates. 
-/// TODO: use better Shift-And-Add multiplier as base case (maybe JHHA2016 or 
+/// triple-controlled gates.
+/// TODO: use better Shift-And-Add multiplier as base case (maybe JHHA2016 or
 /// MCT2017).
 operation MultiplyTextbook(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit is Adj + Ctl {
     let n : Int = Length(A);
@@ -65,11 +66,7 @@ operation Butterfly(A : Qubit[], B : Qubit[]) : Unit {
 operation FFT(X : Qubit[][], g_pwr : Int) : Unit {
     // g = 2^g_pwr.
     let D = Length(X);
-    if (D == 4) {
-        //AddDKRSInPlace(X[0], X[1]);
-    }
     if (D > 1) {
-        Message($"D={D}");
         Fact(D % 2 == 0, "D must be power of 2.");
         let half_D = D / 2;
         let len = Length(X[0]); // 2n'.

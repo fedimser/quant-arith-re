@@ -10,7 +10,6 @@ import Std.Math.Floor;
 import QuantumArithmetic.SC2023.PropagateP;
 import QuantumArithmetic.SC2023.BKTree;
 import QuantumArithmetic.HigherRadixUtils.HigherRadix.generate_p_groups;
-import QuantumArithmetic.HigherRadixUtils.HigherRadix.generate_g_groups_pt1;
 
 // Main Add function that takes A, B, and the radix
 // The first step is setup the higher radix
@@ -184,5 +183,26 @@ operation CarryRipple4TAdder(A : Qubit[], B : Qubit[], C0 : Qubit) : Unit is Adj
     // Compute the sums
     for sumI in 0 .. nrQubits - 1 {
         CNOT(A[sumI], B[sumI]);
+    }
+}
+// first part of generating g groups that gets uncomputed.
+operation generate_g_groups_pt1(p: Qubit[], g: Qubit[], radix : Int) : Unit is Adj + Ctl {
+    body ... {
+        let n : Int = Length(p);
+        let num_groups : Int = n/radix;
+        for i in 0..num_groups-1{
+            for j in 0..radix-2{
+                CCNOT(g[i*radix+j+1], p[i*radix+j], g[i*radix+j]);
+            }
+        }
+    }
+    adjoint ... {
+        let n : Int = Length(p);
+        let num_groups : Int = n/radix;
+        for i in num_groups-1..0{
+            for j in radix-3..0{ // reverse order except for last one
+                CCNOT(g[i*radix+j+1], p[i*radix+j], g[i*radix+j]);
+            }
+        }
     }
 }

@@ -120,14 +120,3 @@ operation TestFMUL_MOD2(n : Int, a_val : Int, b_val : Int, mod : Int) : Int {
     }
     return MeasureInteger(a);
 }
-
-// Computes (a^x_val)%mod.
-operation TestEXP_MOD(n : Int, a : Int, x_val : Int, mod : Int) : Int {
-    use ans = Qubit[n];
-    use x = Qubit[n];
-    ApplyPauliFromInt(PauliX, true, x_val, x);
-
-    QuantumArithmetic.PG2012.EXP_MOD(x, ans, IntAsBigInt(a), IntAsBigInt(mod));
-    Fact(MeasureInteger(x) == x_val, "Register x was changed.");
-    return MeasureInteger(ans);
-}

@@ -46,9 +46,9 @@ operation AddMod2NMinus1OutOfPlace(A : Qubit[], B : Qubit[], C : Qubit[]): Unit 
 }
 
 /// Computes B:=(A+B+(A+B)/2^n)%(2^n) which is ≡ A+B (mod 2^n-1).
-/// WARNING: this is irreversible and uses one garbage qubit.
 /// This is needed for NZLS2023.
-/// TODO: implement this reversibly, as described in DKRS2004.
+/// WARNING: this is incorrect for superposition states.
+/// TODO: implement this correctly, as described in DKRS2004.
 operation AddMod2NMinus1InPlace(A : Qubit[], B : Qubit[]) : Unit {
     let n = Length(A);
     Fact(Length(B) == n, "Size mismatch.");

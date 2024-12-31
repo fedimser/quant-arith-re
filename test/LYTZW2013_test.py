@@ -10,7 +10,8 @@ def setup():
 
 @pytest.mark.parametrize("op", [
     "QuantumArithmetic.LYTZW2013.Increment_v1",
-    "QuantumArithmetic.LYTZW2013.Increment_v2"
+    "QuantumArithmetic.LYTZW2013.Increment_v2",
+    "QuantumArithmetic.LYTZW2013.Increment_v3",
 ])
 @pytest.mark.parametrize("n", [1, 2, 3, 4, 5])
 def test_Increment_Exhaustive(op: str, n: int):
@@ -22,7 +23,8 @@ def test_Increment_Exhaustive(op: str, n: int):
 
 @pytest.mark.parametrize("op", [
     "QuantumArithmetic.LYTZW2013.Increment_v1",
-    "QuantumArithmetic.LYTZW2013.Increment_v2"
+    "QuantumArithmetic.LYTZW2013.Increment_v2",
+    "QuantumArithmetic.LYTZW2013.Increment_v3",
 ])
 @pytest.mark.parametrize("n", [8, 16, 32, 64, 65])
 def test_Increment(op: str, n: int):

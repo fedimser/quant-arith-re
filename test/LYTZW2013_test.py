@@ -24,7 +24,7 @@ def test_Increment_Exhaustive(op: str, n: int):
     "QuantumArithmetic.LYTZW2013.Increment_v1",
     "QuantumArithmetic.LYTZW2013.Increment_v2"
 ])
-@pytest.mark.parametrize("n", [16, 32])
+@pytest.mark.parametrize("n", [8, 16, 32, 64, 65])
 def test_Increment(op: str, n: int):
     N = 2**n
     for _ in range(5):

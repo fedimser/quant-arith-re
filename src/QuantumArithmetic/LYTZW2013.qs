@@ -15,17 +15,19 @@ operation Increment_v1(A: Qubit[]) : Unit is Adj + Ctl {
 /// Computes A := (A+1)%(2^n).
 operation Increment_v2(A: Qubit[]) : Unit is Adj + Ctl {
     let n = Length(A);
-    use C = Qubit[n-1];
+    if (n>=2) {
+        use C = Qubit[n-1];
 
-    for i in n-1..-1..1 {
-        within {
-            CNOT(A[0], C[0]);
-            for j in 1..i-1 {
-                CCNOT(C[j-1], A[j], C[j]);
-            }
-        } apply {
-            CNOT(C[i-1], A[i]);
+        CNOT(A[0], C[0]);
+        for i in 1..n-2 {
+            CCNOT(C[i-1], A[i], C[i]);
         }
+        for i in n-1..-1..2 {
+            CNOT(C[i-1], A[i]);
+            CCNOT(C[i-2], A[i-1], C[i-1]);        
+        }
+        CNOT(C[0], A[1]);
+        CNOT(A[0], C[0]);
     }
     X(A[0]);
 }

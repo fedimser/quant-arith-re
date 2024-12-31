@@ -10,6 +10,7 @@
       "src/QuantumArithmetic/DM2004.qs",
       "src/QuantumArithmetic/GKDKH2021.qs",
       "src/QuantumArithmetic/JHHA2016.qs",
+      "src/QuantumArithmetic/LYTZW2013.qs",
       "src/QuantumArithmetic/LYY2021.qs",
       "src/QuantumArithmetic/MCT2017.qs",
       "src/QuantumArithmetic/NZLS2023.qs",

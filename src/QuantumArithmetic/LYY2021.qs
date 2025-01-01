@@ -99,19 +99,15 @@ operation ModAdd(A : Qubit[], B : Qubit[], N : BigInt) : Unit is Adj + Ctl {
         Fact(Length(B) == n, "Size mismatch.");
         Fact(N >= 2L, "N must be at least 2.");
         Fact(N < 1L <<< n, "N is too large.");
-        use Anc = Qubit[n + 2];
+        use Anc = Qubit[2];
 
-        Controlled CDKM2004.AddWithCarry(controls, (A, B, Anc[n]));
-        CompareByConst(N, B, Anc[n]);
-        CNOT(Anc[n], Anc[n + 1]);
-        CNOT(Anc[n + 1], Anc[n]);
-        X(Anc[n + 1]);
-        within {
-            Controlled ApplyXorInPlaceL([Anc[n + 1]], (N, Anc[0..n-1]));
-        } apply {
-            Adjoint CDKM2004.Add(Anc[0..n-1], B);
-        }
-        Controlled Compare(controls, (A, B, Anc[n + 1]));
+        Controlled CDKM2004.AddWithCarry(controls, (A, B, Anc[0]));
+        CompareByConst(N, B, Anc[0]);
+        CNOT(Anc[0], Anc[1]);
+        CNOT(Anc[1], Anc[0]);
+        X(Anc[1]);
+        Controlled Adjoint AddConstant([Anc[1]], (N, B));
+        Controlled Compare(controls, (A, B, Anc[1]));
     }
 }
 

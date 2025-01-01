@@ -33,7 +33,7 @@ def test_AddMod2NMinus1InPlace(n: int):
 @pytest.mark.parametrize("n",  [1, 2, 3, 4, 5, 8, 15, 16, 32, 64])
 def test_AddConstant(n: int):
     N = 2**n
-    for _ in range(10):
+    for _ in range(100):
         a = random.randint(-2*N, 2*N)
         b = random.randint(0, N-1)
         op = f"QuantumArithmetic.AdditionOrig.AddConstant({a}L,_)"

@@ -34,3 +34,15 @@ operation RunMultiply(n : Int, op : (Qubit[], Qubit[], Qubit[]) => Unit) : Unit 
     use ans = Qubit[2 * n];
     op(a, b, ans);
 }
+
+operation RunConstantAdder(n : Int, op : (BigInt, Qubit[]) => Unit) : Unit {
+    // For consistency, use a number of form 101010..0101.
+    mutable A : BigInt = 0L;
+    for i in 0..n-1 {
+        if i % 2 == 0 {
+            set A += (1L <<< i);
+        }
+    }
+    use B = Qubit[n];
+    op(A, B);
+}

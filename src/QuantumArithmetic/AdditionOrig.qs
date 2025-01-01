@@ -73,14 +73,14 @@ operation AddConstantInternal(controls : Qubit[], A : BigInt, B : Qubit[]) : Uni
     let n = Length(B);
     let A_bits = Std.Convert.BigIntAsBoolArray(A, n);
     Fact(A_bits[0] == true, "A must be odd.");
-    if (n >= 3) {
+    if (n >= 4) {
         use C = Qubit[n-2];
-        CondX(A_bits[1], B[0]);
-        CondX(A_bits[1], B[1]);
+        Controlled CondX(controls, (A_bits[1], B[0]));
+        Controlled CondX(controls, (A_bits[1], B[1]));
         AND(B[0], B[1], C[0]);
         for i in 2..n-2 {
             CondX(Xor(A_bits[i-1], A_bits[i]), C[i-2]);
-            CondX(A_bits[i], B[i]);
+            Controlled CondX(controls, (A_bits[i], B[i]));
             AND(C[i-2], B[i], C[i-1]);
         }
         for i in n-2..-1..2 {
@@ -94,12 +94,22 @@ operation AddConstantInternal(controls : Qubit[], A : BigInt, B : Qubit[]) : Uni
         Controlled CNOT(controls, (C[0], B[2]));
         CondX(A_bits[1], C[0]);
         Adjoint AND(B[0], B[1], C[0]);
-        CondX(A_bits[1], B[0]);
-        Controlled CNOT(controls, (B[0], B[1]));
+        Controlled CondX(controls, (A_bits[1], B[0]));
         Controlled CondX(controls, (Xor(A_bits[n-2], A_bits[n-1]), B[n-1]));
-    } elif (n == 2) {
-        Controlled CNOT(controls, (B[0], B[1]));
+    } elif (n == 3) {
+        use C0 = Qubit();
+        Controlled CondX(controls, (A_bits[1], B[0]));
         Controlled CondX(controls, (A_bits[1], B[1]));
+        AND(B[0], B[1], C0);
+        Controlled CNOT(controls, (C0, B[2]));
+        Adjoint AND(B[0], B[1], C0);
+        Controlled CondX(controls, (A_bits[1], B[0]));
+        Controlled CondX(controls, (Xor(A_bits[1], A_bits[2]), B[n-1]));
+    } elif (n == 2) {
+        Controlled CondX(controls, (A_bits[1], B[1]));
+    }
+    if (n >= 2) {
+        Controlled CNOT(controls, (B[0], B[1]));
     }
     Controlled X(controls, (B[0]));
 }

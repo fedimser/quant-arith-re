@@ -104,6 +104,30 @@ operation UnaryOpInPlace(n : Int, x_val : BigInt, op : (Qubit[]) => Unit) : BigI
     return MeasureBigInt(x);
 }
 
+/// Computes op(x).
+/// Also checks that Controlled functor is implemented correctly (at least for
+/// single control).
+operation UnaryOpInPlaceCtl(n : Int, x_val : BigInt, op : (Qubit[]) => Unit is Ctl) : BigInt {
+    use ctrl = Qubit();
+    use x = Qubit[n];
+
+    ApplyBigInt(x_val, x);
+    Controlled op([ctrl], (x));
+    Fact(MeasureBigInt(x) == x_val, "Must not change when ctrl=0");
+
+    ApplyBigInt(x_val, x);
+    X(ctrl);
+    Controlled op([ctrl], (x));
+    X(ctrl);
+    let ans1 = MeasureBigInt(x);
+
+    ApplyBigInt(x_val, x);
+    op(x);
+    let ans2 = MeasureBigInt(x);
+    Fact(ans1 == ans2, $"Different results from controlled({ans1})/uncontrolled({ans2}).");
+    return ans2;
+}
+
 // Calculates a_val*b_val using out-of-place multiplier `op`.
 // Inputs sizes are `a_size` and `b_size`. Output size is `a_size+b_size`.
 operation TestMultiply(a_size : Int, b_size : Int, a_val : BigInt, b_val : BigInt, op : (Qubit[], Qubit[], Qubit[]) => Unit) : BigInt {

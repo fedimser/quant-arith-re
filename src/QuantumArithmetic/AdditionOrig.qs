@@ -74,21 +74,31 @@ operation AddConstantInternal(controls : Qubit[], A : BigInt, B : Qubit[]) : Uni
     let A_bits = Std.Convert.BigIntAsBoolArray(A, n);
     Fact(A_bits[0] == true, "A must be odd.");
     if (n >= 4) {
-        use C = Qubit[n-2];
+        use C = Qubit[n-3];
         Controlled CondX(controls, (A_bits[1], B[0]));
         Controlled CondX(controls, (A_bits[1], B[1]));
         AND(B[0], B[1], C[0]);
         for i in 2..n-2 {
             CondX(Xor(A_bits[i-1], A_bits[i]), C[i-2]);
             Controlled CondX(controls, (A_bits[i], B[i]));
-            AND(C[i-2], B[i], C[i-1]);
+            if (i != n-2) {
+                AND(C[i-2], B[i], C[i-1]);
+            }
+        }
+        if (Length(controls) > 0) {
+            use C_last = Qubit();
+            AND(C[n-4], B[n-2], C_last);
+            Controlled CNOT(controls, (C_last, B[n-1]));
+            Adjoint AND(C[n-4], B[n-2], C_last);
+        } else {
+            CCNOT(C[n-4], B[n-2], B[n-1]);
         }
         for i in n-2..-1..2 {
-            Controlled CNOT(controls, (C[i-1], B[i + 1]));
             if (i != n-2) {
+                Controlled CNOT(controls, (C[i-1], B[i + 1]));
                 CondX(A_bits[i], C[i-1]);
+                Adjoint AND(C[i-2], B[i], C[i-1]);
             }
-            Adjoint AND(C[i-2], B[i], C[i-1]);
             CondX(A_bits[i], C[i-2]);
         }
         Controlled CNOT(controls, (C[0], B[2]));
@@ -97,12 +107,16 @@ operation AddConstantInternal(controls : Qubit[], A : BigInt, B : Qubit[]) : Uni
         Controlled CondX(controls, (A_bits[1], B[0]));
         Controlled CondX(controls, (Xor(A_bits[n-2], A_bits[n-1]), B[n-1]));
     } elif (n == 3) {
-        use C0 = Qubit();
         Controlled CondX(controls, (A_bits[1], B[0]));
         Controlled CondX(controls, (A_bits[1], B[1]));
-        AND(B[0], B[1], C0);
-        Controlled CNOT(controls, (C0, B[2]));
-        Adjoint AND(B[0], B[1], C0);
+        if (Length(controls) > 0) {
+            use C0 = Qubit();
+            AND(B[0], B[1], C0);
+            Controlled CNOT(controls, (C0, B[2]));
+            Adjoint AND(B[0], B[1], C0);
+        } else {
+            CCNOT(B[0], B[1], B[2]);
+        }
         Controlled CondX(controls, (A_bits[1], B[0]));
         Controlled CondX(controls, (Xor(A_bits[1], A_bits[2]), B[n-1]));
     } elif (n == 2) {

@@ -1,8 +1,10 @@
 /// Original addition algorithms.
 
 import Std.Diagnostics.Fact;
+import Std.Logical.Xor;
 import QuantumArithmetic.JHHA2016;
 import QuantumArithmetic.Utils;
+
 
 /// Computes carries array given A, B and C[0].
 /// By definition, C[i+1]=MAJ(A[i], B[i], C[i]).
@@ -65,7 +67,8 @@ operation CondX(control : Bool, target : Qubit) : Unit is Ctl + Adj {
     }
 }
 
-/// 1<=A<2^N, A-odd.
+/// Computes B:=(A+B)%(2^n), controlled on `controls`.
+/// Must be 1<=A<2^N, A-odd.
 operation AddConstantInternal(controls : Qubit[], A : BigInt, B : Qubit[]) : Unit is Adj {
     let n = Length(B);
     let A_bits = Std.Convert.BigIntAsBoolArray(A, n);
@@ -75,33 +78,30 @@ operation AddConstantInternal(controls : Qubit[], A : BigInt, B : Qubit[]) : Uni
         CondX(A_bits[1], B[0]);
         CondX(A_bits[1], B[1]);
         AND(B[0], B[1], C[0]);
-        CondX(A_bits[1], C[0]);
         for i in 2..n-2 {
-            CondX(A_bits[i], C[i-2]);
+            CondX(Xor(A_bits[i-1], A_bits[i]), C[i-2]);
             CondX(A_bits[i], B[i]);
             AND(C[i-2], B[i], C[i-1]);
-            CondX(A_bits[i], C[i-1]);
         }
         for i in n-2..-1..2 {
             Controlled CNOT(controls, (C[i-1], B[i + 1]));
-            CondX(A_bits[i], C[i-1]);
+            if (i != n-2) {
+                CondX(A_bits[i], C[i-1]);
+            }
             Adjoint AND(C[i-2], B[i], C[i-1]);
-            CondX(A_bits[i], B[i]);
             CondX(A_bits[i], C[i-2]);
         }
         Controlled CNOT(controls, (C[0], B[2]));
         CondX(A_bits[1], C[0]);
         Adjoint AND(B[0], B[1], C[0]);
-        CondX(A_bits[1], B[1]);
         CondX(A_bits[1], B[0]);
-    }
-    if (n >= 2) {
         Controlled CNOT(controls, (B[0], B[1]));
+        Controlled CondX(controls, (Xor(A_bits[n-2], A_bits[n-1]), B[n-1]));
+    } elif (n == 2) {
+        Controlled CNOT(controls, (B[0], B[1]));
+        Controlled CondX(controls, (A_bits[1], B[1]));
     }
     Controlled X(controls, (B[0]));
-    for i in 1..n-1 {
-        CondX(A_bits[i], B[i]);
-    }
 }
 
 

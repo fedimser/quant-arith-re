@@ -31,5 +31,5 @@ def test_Increment(op: str, n: int):
     N = 2**n
     for _ in range(5):
         x = random.randint(0, N-1)
-        ans = eval(f"TestUtils.UnaryOpInPlace({n},{x}L,{op})")
+        ans = eval(f"TestUtils.UnaryOpInPlaceCtl({n},{x}L,{op})")
         assert ans == (x+1) % N

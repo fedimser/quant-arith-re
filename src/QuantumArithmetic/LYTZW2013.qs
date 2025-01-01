@@ -23,9 +23,9 @@ operation Increment_v2(A : Qubit[]) : Unit is Adj + Ctl {
         for i in 1..n-2 {
             CCNOT(C[i-1], A[i], C[i]);
         }
-        for i in n-1..-1..2 {
-            CNOT(C[i-1], A[i]);
-            CCNOT(C[i-2], A[i-1], C[i-1]);
+        for i in n-2..-1..1 {
+            CNOT(C[i], A[i+1]);
+            CCNOT(C[i-1], A[i], C[i]);
         }
         CNOT(C[0], A[1]);
         CNOT(A[0], C[0]);

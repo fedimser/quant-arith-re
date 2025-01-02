@@ -1,6 +1,4 @@
-import Std.Diagnostics.DumpMachine;
-import Std.Diagnostics.DumpOperation;
-import QuantumArithmetic.CDKM2004.AddWithCarry;
+import QuantumArithmetic.Utils.Rearrange2D;
 /// Implementation of operations presented in paper:
 ///   CNOT-count optimized quantum circuit of the Shor’s algorithm
 ///   Xia Liu, Huan Yang, Li Yang, 2021.
@@ -240,3 +238,63 @@ operation TableLookup(input : Qubit[], target : Qubit[], table : BigInt[]) : Uni
         }
     }
 }
+
+function MakeLookupTable(a : BigInt[], N : BigInt) : BigInt[] {
+    let m = Length(a);
+    if (m == 1) {
+        return [1L, a[0]];
+    } else {
+        mutable ans = MakeLookupTable(a[0..m-2], N);
+        for i in 0..(1 <<< (m-1))-1 {
+            set ans += [(ans[i] * a[m-1]) % N];
+        }
+        return ans;
+    }
+}
+
+/// Computes Ans=(a^x)%N.
+/// Ans must be prepared in zero state. a can be anything. Doesn't change x.
+/// Figure 14 in the paper.
+/// With window_size=1, equivalent to Figure 12.
+operation ModExpWindowed(
+    x : Qubit[],
+    Ans : Qubit[],
+    a : BigInt,
+    N : BigInt,
+    window_size : Int
+) : Unit is Adj + Ctl {
+    let n1 = Length(x);
+    let n2 = Length(Ans);
+    let a_sqs = Utils.ComputeSequentialSquares(a, N, n1);
+    let window_count = Utils.DivCeil(n1, window_size);
+    use Anc1 = Qubit[window_count * n2];
+    let y : Qubit[][] = Rearrange2D(Anc1, window_count, n2);  // Intermediary results.
+    use Anc2 = Qubit[window_count * n2];
+    let lkp : Qubit[][] = Rearrange2D(Anc2, window_count, n2); // Looked up values.
+    within {
+        X(y[0][0]);  // y[0] := 1.
+        for i in 0..window_count-2 {
+            let x_range = i * window_size..(i * window_size + window_size-1);
+            TableLookup(x[x_range], lkp[i], MakeLookupTable(a_sqs[x_range], N));
+            ModMulFast(lkp[i], y[i], y[i + 1], N);
+        }
+        let x_range = (window_count-1) * window_size..n1-1;
+        TableLookup(x[x_range], lkp[window_count-1], MakeLookupTable(a_sqs[x_range], N));
+    } apply {
+        ModMulFast(lkp[window_count-1], y[window_count-1], Ans, N);
+    }
+}
+
+operation ModExpWindowed1(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
+    ModExpWindowed(x, Ans, a, N, 1);
+}
+
+operation ModExpWindowed2(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
+    ModExpWindowed(x, Ans, a, N, 2);
+}
+
+operation ModExpWindowed3(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
+    ModExpWindowed(x, Ans, a, N, 3);
+}
+
+export ModExp, ModExpWindowed, TableLookup;

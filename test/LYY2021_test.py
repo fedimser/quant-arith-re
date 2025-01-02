@@ -70,15 +70,19 @@ def test_ModMulByConstFast(n: int):
         assert ans == (x*y) % N
 
 
+@pytest.mark.parametrize("op", [
+    "QuantumArithmetic.LYY2021.ModExp",
+    "QuantumArithmetic.LYY2021.ModExpWindowed1",
+    "QuantumArithmetic.LYY2021.ModExpWindowed2",
+    "QuantumArithmetic.LYY2021.ModExpWindowed3",
+])
 @pytest.mark.parametrize("n", [2, 3, 4, 5, 6, 7, 8, 9, 10, 16])
-def test_ModExp(n: int):
-    for _ in range(5 if n <= 8 else 1):
-        N = 1+2*random.randint(1, 2**(n-1)-1)
-        a = test_utils.random_coprime(N)
-        x = random.randint(0, 2**n-1)
-        op = "QuantumArithmetic.LYY2021.ModExp"
-        ans = eval(f"TestUtils.TestModExp({n},{a}L,{x}L,{N}L,{op})")
-        assert ans == test_utils.pow_mod(a, x, N)
+def test_ModExp(op: str, n: int):
+    N = 1+2*random.randint(1, 2**(n-1)-1)
+    a = test_utils.random_coprime(N)
+    x = random.randint(0, 2**n-1)
+    ans = eval(f"TestUtils.TestModExp({n},{a}L,{x}L,{N}L,{op})")
+    assert ans == test_utils.pow_mod(a, x, N)
 
 
 @pytest.mark.parametrize("m", [1, 2, 3, 4, 5])

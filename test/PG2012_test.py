@@ -65,3 +65,14 @@ def test_EXP_MOD(n, a, b, N):
     op = "QuantumArithmetic.PG2012.EXP_MOD"
     ans = eval(f"TestUtils.TestModExp({n},{a}L,{b}L,{N}L,{op})")
     assert ans == (a**b) % N
+
+
+@pytest.mark.parametrize("n",  [1, 2, 3, 4, 5, 8])
+def test_AddConstantQFT(n: int):
+    N = 2**n
+    for _ in range(5):
+        a = random.randint(-2*N, 2*N)
+        b = random.randint(0, N-1)
+        op = f"QuantumArithmetic.PG2012.AddConstantQFT({a}L,_)"
+        ans = eval(f"TestUtils.UnaryOpInPlaceCtl({n},{b}L,{op})")
+        assert ans == (a+b) % N

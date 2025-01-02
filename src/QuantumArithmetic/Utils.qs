@@ -14,6 +14,11 @@ function FloorLog2(n : BigInt) : Int {
     return ans;
 }
 
+/// Computes ⌈a/b⌉. 
+function DivCeil(a: Int, b:Int) : Int {
+    return ((a + b - 1) / b); 
+}
+
 /// Applies X for each qubit in register.
 operation ParallelX(qubits : Qubit[]) : Unit is Ctl + Adj {
     ApplyToEachCA(X, qubits);
@@ -124,7 +129,7 @@ function ModInv(a : BigInt, N : BigInt) : BigInt {
 
 /// Computes [(a^(2^i))%N for i in 0..n-1].
 function ComputeSequentialSquares(a : BigInt, N : BigInt, n : Int) : BigInt[] {
-    mutable ans : BigInt[] = [a];
+    mutable ans : BigInt[] = [((a % N) + N) % N];
     for i in 1..n-1 {
         set ans += [(ans[i-1] * ans[i-1]) % N];
     }

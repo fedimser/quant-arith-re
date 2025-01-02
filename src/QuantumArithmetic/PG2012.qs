@@ -40,6 +40,15 @@ operation FADD(a : BigInt, b_f : Qubit[]) : Unit is Ctl + Adj {
     }
 }
 
+/// Computes B:=(A+B)%(2^n) using QFT.
+operation AddConstantQFT(A : BigInt, B : Qubit[]) : Unit is Ctl + Adj {
+    within {
+        ApplyQFT(B);
+    } apply {
+        FADD(A, B);
+    }
+}
+
 operation PhaseGradient(qs : Qubit[]) : Unit is Adj + Ctl {
     for i in IndexRange(qs) {
         R1Precise(1L, i, qs[i]);
@@ -313,4 +322,4 @@ operation EXP_MOD(x : Qubit[], y : Qubit[], a : BigInt, N : BigInt) : Unit is Ct
     }
 }
 
-export FMAC, GMFDIV1, GMFDIV2, FMAC_MOD2, FMUL_MOD2, EXP_MOD;
+export FMAC, GMFDIV1, GMFDIV2, FMAC_MOD2, FMUL_MOD2, EXP_MOD, AddConstantQFT;

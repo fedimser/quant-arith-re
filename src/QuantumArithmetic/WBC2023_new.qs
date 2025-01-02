@@ -9,42 +9,53 @@ import Std.Diagnostics.DumpRegister;
 import Std.Math.Floor;
 import QuantumArithmetic.SC2023.PropagateP;
 import QuantumArithmetic.SC2023.BKTree;
-import QuantumArithmetic.HigherRadixUtils.HigherRadix.generate_p_groups;
 
 // Main Add function that takes A, B, and the radix
 // The first step is setup the higher radix
 // Then the Gidney RCA is used
+
+// min(radix_num) = 2
+// max(radix_num) < add_bit_num
+
+// if radix_num==1, 
+// higher radix adder == Draper's inplace CLA adder
+
+// if radix_num==add_bit_num, 
+// higher radix adder == Gidney's RCA adder
+
 operation Add(A: Qubit[], B: Qubit[], g: Qubit[], radix: Int) : Unit is Adj {
     DumpRegister(A);
     DumpRegister(B);
     let n : Int = Length(A);
     let num_groups : Int = n/radix;
     // use g = Qubit[n];
-    mutable g_new = g[0..radix..n-1];
+    mutable g_new = g[radix-1..radix..n-1];
+    Fact(Length(g_new) == num_groups, "number of groups must match");
     use p_new = Qubit[num_groups];
     let BKOps = BKTree(num_groups-1);  //don't need the c_highest_bit
     Message($"BKOps: {BKOps}");
     use BKAccilla = Qubit[3 * Length(BKOps)];
     for i in 0..num_groups-1 {
-        for j in 0..radix-2 {
+        for j in 1..radix-1 {
             CCNOT(A[i*radix + j], B[i*radix + j], g[i*radix + j]);
         }
     }
     within{
-        for i in 1..num_groups {
-            CCNOT(A[i*radix-1], B[i*radix-1], g[i*radix-1]);
+        for i in 0..num_groups - 1 {
+            CCNOT(A[i*radix], B[i*radix], g[i*radix]);
         }
         for i in 0..n-1 {
             CNOT(A[i], B[i]);
         }
         DumpRegister(B);
         DumpRegister(g);
-        generate_p_groups(B, g, p_new, radix);
+        generate_p_groups(B, p_new, radix);
         DumpRegister(p_new);
         generate_g_groups_pt1(B, g, radix);
         DumpRegister(g_new);
         // include decomputation
         BrentKung(g_new, p_new, BKAccilla, BKOps);
+        DumpRegister(g_new);
     } apply {
 
     }
@@ -54,7 +65,7 @@ operation Add(A: Qubit[], B: Qubit[], g: Qubit[], radix: Int) : Unit is Adj {
     DumpRegister(A);
     DumpRegister(g_new);
     use c0 = Qubit();
-    let c_pair = g_new[1..num_groups-1] + [c0];
+    let c_pair = [c0] + g_new[0..num_groups-2];
     DumpRegister(c_pair);
 
     // the rest of the groups include the carry
@@ -139,15 +150,15 @@ operation CarryRipple4TAdder(A : Qubit[], B : Qubit[], C0 : Qubit) : Unit is Adj
         let carryInIdx = rippleI - 1;
         let littleEndianIdx = nrQubits - 1 - rippleI;
         if (carryInIdx == -1) {
-            CNOT(C0, A[littleEndianIdx]);
-            CNOT(C0, B[littleEndianIdx]);
+            CNOT(C0, A[rippleI]);
+            CNOT(C0, B[rippleI]);
         } else {
-            CNOT(T[carryInIdx], A[littleEndianIdx]);
-            CNOT(T[carryInIdx], B[littleEndianIdx]);
+            CNOT(T[carryInIdx], A[rippleI]);
+            CNOT(T[carryInIdx], B[rippleI]);
         }
 
         // Toffoli gate
-        CCNOT(A[littleEndianIdx], B[littleEndianIdx], T[rippleI]);
+        CCNOT(A[rippleI], B[rippleI], T[rippleI]);
 
         if (carryInIdx == -1) {
             CNOT(C0, T[rippleI]);
@@ -157,12 +168,11 @@ operation CarryRipple4TAdder(A : Qubit[], B : Qubit[], C0 : Qubit) : Unit is Adj
     }
 
     // Middle CNOT
-    CNOT(T[nrQubits - 2], B[0]);
+    CNOT(T[nrQubits - 2], B[nrQubits - 1]);
 
     // Propagate back the carry ripple
     for rippleI in nrQubits-2..-1..0 {
         let carryInIdx = rippleI - 1;
-        let littleEndianIdx = nrQubits - 1 - rippleI;
         if (rippleI == 0) {
             CNOT(C0, T[rippleI]);
         } else {
@@ -170,13 +180,13 @@ operation CarryRipple4TAdder(A : Qubit[], B : Qubit[], C0 : Qubit) : Unit is Adj
         }
 
         // Toffoli gate
-        CCNOT(A[littleEndianIdx], B[littleEndianIdx], T[rippleI]);
+        CCNOT(A[rippleI], B[rippleI], T[rippleI]);
 
         // Reverse CNOTs
         if (rippleI != 0) {
-            CNOT(T[carryInIdx], A[littleEndianIdx]);
+            CNOT(T[carryInIdx], A[rippleI]);
         } else {
-            CNOT(C0, A[littleEndianIdx]);
+            CNOT(C0, A[rippleI]);
         }
     }
 
@@ -185,6 +195,7 @@ operation CarryRipple4TAdder(A : Qubit[], B : Qubit[], C0 : Qubit) : Unit is Adj
         CNOT(A[sumI], B[sumI]);
     }
 }
+
 // first part of generating g groups that gets uncomputed.
 operation generate_g_groups_pt1(p: Qubit[], g: Qubit[], radix : Int) : Unit is Adj + Ctl {
     body ... {
@@ -192,7 +203,7 @@ operation generate_g_groups_pt1(p: Qubit[], g: Qubit[], radix : Int) : Unit is A
         let num_groups : Int = n/radix;
         for i in 0..num_groups-1{
             for j in 0..radix-2{
-                CCNOT(g[i*radix+j+1], p[i*radix+j], g[i*radix+j]);
+                CCNOT(g[i*radix+j], p[i*radix+j+1], g[i*radix+j+1]);
             }
         }
     }
@@ -201,8 +212,16 @@ operation generate_g_groups_pt1(p: Qubit[], g: Qubit[], radix : Int) : Unit is A
         let num_groups : Int = n/radix;
         for i in num_groups-1..0{
             for j in radix-3..0{ // reverse order except for last one
-                CCNOT(g[i*radix+j+1], p[i*radix+j], g[i*radix+j]);
+                CCNOT(g[i*radix+j], p[i*radix+j+1], g[i*radix+j+1]);
             }
         }
+    }
+}
+
+// generate p groups which gets uncomputed
+operation generate_p_groups(p: Qubit[], ancilla : Qubit[], radix : Int) : Unit is Adj + Ctl {
+    let n : Int = Length(ancilla);
+    for i in 0..n-1{
+        Controlled X(p[i*radix..(i+1)*radix-1], ancilla[i]);
     }
 }

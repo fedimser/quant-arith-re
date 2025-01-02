@@ -147,7 +147,7 @@ operation Test_Divide_Restoring(n : Int, a_val : Int, b_val : Int, op : (Qubit[]
 }
 
 operation BinaryOpInPlaceRadix(n : Int, x_val : Int, y_val : Int, radix : Int, op : (Qubit[], Qubit[], Qubit[], Int) => Unit) : Int {
-    Message($"x_val={x_val} y_val={y_val}");
+    Message($"x_val={x_val} y_val={y_val} radix={radix}");
     use x = Qubit[n];
     use y = Qubit[n];
     use g = Qubit[n];

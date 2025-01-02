@@ -297,4 +297,12 @@ operation ModExpWindowed3(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : 
     ModExpWindowed(x, Ans, a, N, 3);
 }
 
+operation ModExpWindowed4(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
+    ModExpWindowed(x, Ans, a, N, 4);
+}
+
+operation ModExpWindowed8(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
+    ModExpWindowed(x, Ans, a, N, 8);
+}
+
 export ModExp, ModExpWindowed, TableLookup;

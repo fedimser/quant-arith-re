@@ -38,11 +38,17 @@ operation RunMultiply(n : Int, op : (Qubit[], Qubit[], Qubit[]) => Unit) : Unit 
 operation RunConstantAdder(n : Int, op : (BigInt, Qubit[]) => Unit) : Unit {
     // For consistency, use a number of form 101010..0101.
     mutable A : BigInt = 0L;
-    for i in 0..n-1 {
-        if i % 2 == 0 {
-            set A += (1L <<< i);
-        }
+    for i in 0..2..n-1 {
+        set A += (1L <<< i);
     }
     use B = Qubit[n];
     op(A, B);
+}
+
+operation RunModExp(n : Int, op : (Qubit[], Qubit[], BigInt, BigInt) => Unit) : Unit {
+    use ans = Qubit[n];
+    use x_qubits = Qubit[n];
+    let N = (1L <<< n)-1L;
+    mutable a : BigInt = 59604644783353249L;  // A fixed prime number.
+    op(x_qubits, ans, a, N);
 }

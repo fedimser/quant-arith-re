@@ -75,6 +75,8 @@ def test_ModMulByConstFast(n: int):
     "QuantumArithmetic.LYY2021.ModExpWindowed1",
     "QuantumArithmetic.LYY2021.ModExpWindowed2",
     "QuantumArithmetic.LYY2021.ModExpWindowed3",
+    "QuantumArithmetic.LYY2021.ModExpWindowed4",
+    "QuantumArithmetic.LYY2021.ModExpWindowed8",
 ])
 @pytest.mark.parametrize("n", [2, 3, 4, 5, 6, 7, 8, 9, 10, 16])
 def test_ModExp(op: str, n: int):

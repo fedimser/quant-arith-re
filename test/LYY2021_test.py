@@ -71,7 +71,7 @@ def test_ModMulByConstFast(n: int):
 
 
 @pytest.mark.parametrize("n", [2, 3, 4, 5, 6, 7, 8, 9, 10, 16])
-def test_ModExp(n):
+def test_ModExp(n: int):
     for _ in range(5 if n <= 8 else 1):
         N = 1+2*random.randint(1, 2**(n-1)-1)
         a = test_utils.random_coprime(N)
@@ -79,3 +79,13 @@ def test_ModExp(n):
         op = "QuantumArithmetic.LYY2021.ModExp"
         ans = eval(f"TestUtils.TestModExp({n},{a}L,{x}L,{N}L,{op})")
         assert ans == test_utils.pow_mod(a, x, N)
+
+
+@pytest.mark.parametrize("m", [1, 2, 3, 4, 5])
+def test_TableLookup(m: int):
+    n = 8
+    table = [random.randint(0, 2**n-1) for _ in range(2**m)]
+    table_str = "["+",".join(f"{x}L" for x in table) + "]"
+    ans = eval(
+        f"QuantumArithmetic.LYY2021Test.TestTableLookup({n},{m},{table_str})")
+    assert ans == table

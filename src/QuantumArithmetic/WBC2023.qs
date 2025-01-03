@@ -1,3 +1,4 @@
+import QuantumArithmetic.Utils.ParallelCNOT;
 import Std.Diagnostics.DumpMachine;
 /// Implementation of the adder presented in paper:
 /// A Higher radix architecture for quantum carry-lookahead adder
@@ -12,43 +13,47 @@ import QuantumArithmetic.AdditionStd.Add_CG;
 // Main Add function that takes A, B, and the radix
 // The first step is setup the higher radix
 // Then the Gidney RCA is used
-operation Add(A: Qubit[], B: Qubit[], radix: Int) : Unit is Adj {
+operation Add(A : Qubit[], B : Qubit[], C : Qubit[], radix : Int) : Unit is Adj + Ctl {
     let n : Int = Length(A);
     Fact(Length(B) == n, "Register sizes must match.");
 
     use ancilla = Qubit[n];
 
-    //DEBUG
-    // Message("Starting State:");
-    // DumpMachine();
+    within {
+        //DEBUG
+        // Message("Starting State:");
+        // DumpMachine();
 
-    // call higher radix function that returns an initial state 
-    HigherRadix(A, B, ancilla, radix);
-
-
-    //DEBUG
-    // Message("After higher radix before addition:");
-    // DumpMachine();
+        // call higher radix function that returns an initial state
+        HigherRadix(A, B, ancilla, radix);
 
 
-    // first round does not include a carry in
-    first_RCA_CG(A[0..radix-1], B[0..radix-1], ancilla[0..radix-2]);
+        //DEBUG
+        // Message("After higher radix before addition:");
+        // DumpMachine();
 
-    // the rest of the groups include the carry
-    for i in 1..n/radix-1 {
-        RCA_CG(A[i*radix..(i+1)*radix-1], B[i*radix..(i+1)*radix-1], ancilla[i*radix-1..(i+1)*radix-2]);
+
+        // first round does not include a carry in
+        first_RCA_CG(A[0..radix-1], B[0..radix-1], ancilla[0..radix-2]);
+
+        // the rest of the groups include the carry
+        for i in 1..n / radix-1 {
+            RCA_CG(A[i * radix..(i + 1) * radix-1], B[i * radix..(i + 1) * radix-1], ancilla[i * radix-1..(i + 1) * radix-2]);
+        }
+    } apply {
+        ParallelCNOT(B, C);
     }
 
     // Currently error about an ancillary qubit not in state |0>
     // ResetAll(ancilla);
 
     // DEBUG
-    DumpMachine();
-    
-    for i in 0..n/radix-1{
-        Message($"B{i} : {B[i*radix..(i+1)*radix-1]}");
-    }
-    Message("final state:");
+    //DumpMachine();
+
+    //for i in 0..n / radix-1 {
+    //    Message($"B{i} : {B[i * radix..(i + 1) * radix-1]}");
+    //}
+    //Message("final state:");
 
     // 00100 00000 00000
     // 100100000000000
@@ -57,11 +62,11 @@ operation Add(A: Qubit[], B: Qubit[], radix: Int) : Unit is Adj {
 
 }
 
-operation first_RCA_CG(A: Qubit[], B: Qubit[], ancilla: Qubit[]) : Unit is Adj + Ctl {
+operation first_RCA_CG(A : Qubit[], B : Qubit[], ancilla : Qubit[]) : Unit is Adj + Ctl {
     let alen : Int = Length(A);
     // carry_in would normally be ancilla[0], but for first group it is not needed
     within {
-            ApplyAndAssuming0Target(A[0], B[0], ancilla[0]);
+        ApplyAndAssuming0Target(A[0], B[0], ancilla[0]);
     } apply {
         for i in 1..alen - 2 {
             CarryForInc(ancilla[i - 1], A[i], B[i], ancilla[i]);
@@ -71,23 +76,23 @@ operation first_RCA_CG(A: Qubit[], B: Qubit[], ancilla: Qubit[]) : Unit is Adj +
             UncarryForInc(ancilla[i - 1], A[i], B[i], ancilla[i]);
         }
     }
-    for i in 0..alen-1{
-        CNOT(A[i], B[i]); 
+    for i in 0..alen-1 {
+        CNOT(A[i], B[i]);
     }
 }
 
-operation RCA_CG(A: Qubit[], B: Qubit[], ancilla: Qubit[]) : Unit is Adj + Ctl {
+operation RCA_CG(A : Qubit[], B : Qubit[], ancilla : Qubit[]) : Unit is Adj + Ctl {
     let alen : Int = Length(A);
-    
+
     for i in 0..alen - 2 {
-        CarryForInc(ancilla[i], A[i], B[i], ancilla[i+1]);
+        CarryForInc(ancilla[i], A[i], B[i], ancilla[i + 1]);
     }
     CNOT(ancilla[alen - 1], B[alen - 1]);
     for i in alen - 2..-1..0 {
-        UncarryForInc(ancilla[i], A[i], B[i], ancilla[i+1]);
+        UncarryForInc(ancilla[i], A[i], B[i], ancilla[i + 1]);
     }
-    for i in 0..alen-1{
-        CNOT(A[i], B[i]); 
+    for i in 0..alen-1 {
+        CNOT(A[i], B[i]);
     }
 
 }

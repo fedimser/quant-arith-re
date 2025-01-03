@@ -1,14 +1,10 @@
+import QuantumArithmetic.Utils.ParallelCNOT;
 import QuantumArithmetic.Utils.Rearrange2D;
 /// Implementation of operations presented in paper:
 ///   CNOT-count optimized quantum circuit of the Shor’s algorithm
 ///   Xia Liu, Huan Yang, Li Yang, 2021.
 ///   https://arxiv.org/abs/2112.11358
 /// All numbers are unsigned integers, little-endian.
-///
-/// TODO: implement other ideas from the paper:
-///   1. Windowed.
-///   2. Montgomery (fig 16-17).
-///   3. Intermediate data accumulation (fig 12).
 
 import Std.Arithmetic.IncByLUsingIncByLE;
 import Std.Diagnostics.Fact;
@@ -42,6 +38,11 @@ operation AddConstant(A : BigInt, B : Qubit[]) : Unit is Adj + Ctl {
             }
         }
     }
+}
+
+/// Computes X-=A modulo 2^n.
+operation SubtractConstant(A : BigInt, B : Qubit[]) : Unit is Adj + Ctl {
+    Adjoint AddConstant(A, B);
 }
 
 /// Computes Ans ⊕= [A>B].
@@ -85,6 +86,11 @@ operation LeftShift(B : Qubit[]) : Unit is Adj + Ctl {
     }
 }
 
+/// Computes B:=B/2, when the lowest bit is known to be 0.
+operation RightShift(B : Qubit[]) : Unit is Adj + Ctl {
+    Adjoint LeftShift(B);
+}
+
 /// Computes B:=(A+B)%N.
 /// Must be 0 <= A,B < N < 2^N.
 /// Figures 8 and 9 in the paper.
@@ -104,7 +110,7 @@ operation ModAdd(A : Qubit[], B : Qubit[], N : BigInt) : Unit is Adj + Ctl {
         CNOT(Anc[0], Anc[1]);
         CNOT(Anc[1], Anc[0]);
         X(Anc[1]);
-        Controlled Adjoint AddConstant([Anc[1]], (N, B));
+        Controlled SubtractConstant([Anc[1]], (N, B));
         Controlled Compare(controls, (A, B, Anc[1]));
     }
 }
@@ -303,6 +309,47 @@ operation ModExpWindowed4(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : 
 
 operation ModExpWindowed8(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
     ModExpWindowed(x, Ans, a, N, 8);
+}
+
+/// Figure 17 in the paper.
+/// Classical algorithm originally descibed in: http://www.jstor.org/stable/2007970
+operation ForwardMontgomery(x : Qubit[], y : Qubit[], Ans : Qubit[], Anc : Qubit[], N : BigInt) : Unit is Adj + Ctl {
+    let n = Length(x);
+    Fact(Math.IsCoprimeL(Std.Convert.IntAsBigInt(n), N), "n and N must be coprime.");
+    Fact(Length(y) == n, "Size mismatch.");
+    Fact(Length(Ans) == n, "Size mismatch.");
+    Fact(Length(Anc) == n + 2, "Size mismatch.");
+
+    for i in 0..n-1 {
+        if (i == 0) {
+            Controlled ParallelCNOT([x[0]], (y, Ans));
+        } else {
+            Controlled CDKM2004.AddWithCarry([x[i]], (y, Ans, Anc[0]));  // Warrning! CCCNOT!
+        }
+        CNOT(Ans[0], Anc[i + 1]);
+        Controlled AddConstant([Anc[i + 1]], (N, Ans + [Anc[0]]));
+        RightShift(Ans + [Anc[0]]);
+    }
+    CompareByConst(N, Ans + [Anc[0]], Anc[n + 1]);
+    X(Anc[n + 1]);
+    Controlled SubtractConstant([Anc[n + 1]], (N, Ans + [Anc[0]]));
+}
+
+/// Computes Ans ⊕= ((x*y)/2^n)%N.
+/// Doesn't change x, y.
+/// Warning! Must be 0<=y<N, and gcd(n,N)=1.
+/// Figure 16 in the paper.
+/// TODO: this is incorrect for some pairs (n,N). Fix it!
+/// TODO: Montgomery-based ModExp.
+operation ModMulMontgomery(x : Qubit[], y : Qubit[], Ans : Qubit[], N : BigInt) : Unit is Adj + Ctl {
+    let n = Length(x);
+    use TmpAns = Qubit[n];
+    use Anc = Qubit[n + 2];
+    within {
+        ForwardMontgomery(x, y, TmpAns, Anc, N);
+    } apply {
+        ParallelCNOT(TmpAns, Ans);
+    }
 }
 
 export ModExp, ModExpWindowed, TableLookup;

@@ -97,18 +97,15 @@ def test_TableLookup(m: int):
     assert ans == table
 
 
-# TODO: make it work fo all values of (n,N).
-def test_ModMulMontgomery():
+@pytest.mark.parametrize("n", [2, 3, 4, 5, 6, 8, 11, 16])
+def test_ModMulMontgomery(n : int):
     op = "QuantumArithmetic.LYY2021.ModMulMontgomery"
-    n = 5
-    #N = 1+2*random.randint(1, 2**(n-1)-1)  # Odd number in [3..2^n-1].
-    N = 9
-    K = test_utils.pow_mod((N+1)//2, n, N)  # 2^-n mod N.
-    #print("N=", N)
-    assert ((2**n)*K) % N == 1
-    for x in range(2**n):
-        #print(f"x={x}")
-        for y1 in range(N):
-            #y1 = (y**(2**n))%N
-            ans = eval(f"TestUtils.BinaryOp({n},{x}L,{y1}L,{op}(_,_,_,{N}L))")
-            assert ans == (x*y1*K) % N
+    for _ in range(10):
+        N = 1+2*random.randint(1, 2**(n-1)-1)  # Odd number in [3..2^n-1].
+        assert (3 <= N < 2**n and N % 2 == 1)
+        K = test_utils.pow_mod((N+1)//2, n, N)  # 2^-n mod N.
+        assert ((2**n)*K) % N == 1
+        x = random.randint(0, 2**n-1)
+        y = random.randint(0, N-1)
+        ans = eval(f"TestUtils.BinaryOp({n},{x}L,{y}L,{op}(_,_,_,{N}L))")
+        assert ans == (x*y*K) % N

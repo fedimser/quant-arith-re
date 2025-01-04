@@ -261,7 +261,6 @@ function MakeLookupTable(a : BigInt[], N : BigInt) : BigInt[] {
 /// Computes Ans=(a^x)%N.
 /// Ans must be prepared in zero state. a can be anything. Doesn't change x.
 /// Figure 14 in the paper.
-/// With window_size=1, equivalent to Figure 12.
 operation ModExpWindowed(
     x : Qubit[],
     Ans : Qubit[],
@@ -289,26 +288,6 @@ operation ModExpWindowed(
     } apply {
         ModMulFast(lkp[window_count-1], y[window_count-1], Ans, N);
     }
-}
-
-operation ModExpWindowed1(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
-    ModExpWindowed(x, Ans, a, N, 1);
-}
-
-operation ModExpWindowed2(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
-    ModExpWindowed(x, Ans, a, N, 2);
-}
-
-operation ModExpWindowed3(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
-    ModExpWindowed(x, Ans, a, N, 3);
-}
-
-operation ModExpWindowed4(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
-    ModExpWindowed(x, Ans, a, N, 4);
-}
-
-operation ModExpWindowed8(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
-    ModExpWindowed(x, Ans, a, N, 8);
 }
 
 /// Figure 17 in the paper.
@@ -339,7 +318,6 @@ operation ForwardMontgomery(x : Qubit[], y : Qubit[], Ans : Qubit[], Anc : Qubit
 /// Doesn't change x, y.
 /// Constraints: 0<=y<N, 3<=N<=2^n2-1, N-odd.
 /// Figure 16 in the paper.
-/// TODO: Montgomery-based ModExp.
 operation ModMulMontgomery(x : Qubit[], y : Qubit[], Ans : Qubit[], N : BigInt) : Unit is Adj + Ctl {
     let n2 = Length(y);
     Fact(Length(Ans) == n2, "Size mismatch.");
@@ -366,4 +344,85 @@ operation ModMulMontgomery(x : Qubit[], y : Qubit[], Ans : Qubit[], N : BigInt) 
     }
 }
 
-export ModExp, ModExpWindowed, TableLookup;
+/// Computes Ans=(a^x)%N.
+/// Ans must be prepared in zero state. a can be anything. Doesn't change x.
+/// Figure 14 in the paper.
+/// With window_size=1, equivalent to Figure 12.
+operation ModExpWindowedMontgomery(
+    x : Qubit[],
+    Ans : Qubit[],
+    a : BigInt,
+    N : BigInt,
+    window_size : Int
+) : Unit is Adj + Ctl {
+    let n1 = Length(x);
+    let n2 = Length(Ans);
+    let a_sqs = Utils.ComputeSequentialSquares(a, N, n1);
+    let window_count = Utils.DivCeil(n1, window_size);
+    use Anc1 = Qubit[window_count * n2];
+    let y : Qubit[][] = Rearrange2D(Anc1, window_count, n2);  // Intermediary results.
+    use Anc2 = Qubit[window_count * n2];
+    let lkp : Qubit[][] = Rearrange2D(Anc2, window_count, n2); // Looked up values.
+    within {
+        X(y[0][0]);  // y[0] := 1.
+        for i in 0..window_count-2 {
+            let x_range = i * window_size..(i * window_size + window_size-1);
+            let lookup_table = Std.Arrays.Mapped(x -> (x <<< n2) % N, MakeLookupTable(a_sqs[x_range], N));
+            TableLookup(x[x_range], lkp[i], lookup_table);
+            ModMulMontgomery(lkp[i], y[i], y[i + 1], N);
+        }
+        let x_range = (window_count-1) * window_size..n1-1;
+        let lookup_table = Std.Arrays.Mapped(x -> (x <<< n2) % N, MakeLookupTable(a_sqs[x_range], N));
+        TableLookup(x[x_range], lkp[window_count-1], lookup_table);
+    } apply {
+        ModMulMontgomery(lkp[window_count-1], y[window_count-1], Ans, N);
+    }
+}
+
+export ModExp, ModExpWindowed, ModExpWindowedMontgomery, TableLookup;
+
+
+// Below are aliases for testing and resource estimation.
+operation ModExpWindowed1(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
+    ModExpWindowed(x, Ans, a, N, 1);
+}
+
+operation ModExpWindowed2(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
+    ModExpWindowed(x, Ans, a, N, 2);
+}
+
+operation ModExpWindowed3(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
+    ModExpWindowed(x, Ans, a, N, 3);
+}
+
+operation ModExpWindowed4(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
+    ModExpWindowed(x, Ans, a, N, 4);
+}
+
+operation ModExpWindowed8(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
+    ModExpWindowed(x, Ans, a, N, 8);
+}
+
+operation ModExpWindowed16(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
+    ModExpWindowed(x, Ans, a, N, 8);
+}
+
+operation ModExpM_MG_W1(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
+    ModExpWindowedMontgomery(x, Ans, a, N, 1);
+}
+
+operation ModExp_MG_W2(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
+    ModExpWindowedMontgomery(x, Ans, a, N, 2);
+}
+
+operation ModExp_MG_W4(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
+    ModExpWindowedMontgomery(x, Ans, a, N, 4);
+}
+
+operation ModExp_MG_W8(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
+    ModExpWindowedMontgomery(x, Ans, a, N, 8);
+}
+
+operation ModExp_MG_W16(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
+    ModExpWindowedMontgomery(x, Ans, a, N, 16);
+}

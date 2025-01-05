@@ -185,3 +185,24 @@ operation BinaryOpInPlaceRadix(n : Int, x_val : Int, y_val : Int, radix : Int, o
     Message($"x={new_x} y={ans} g={new_g}");
     return ans;
 }
+
+operation UnaryPredicateCtl(n : Int, x_val : BigInt, op : (Qubit[], Qubit) => Unit is Ctl) : Bool {
+    use ctrl = Qubit();
+    use x = Qubit[n];
+    use ans = Qubit();
+
+    ApplyBigInt(x_val, x);
+    Controlled op([ctrl], (x, ans));
+    Fact(MResetZ(ans) == Zero, "Must return false when ctrl=false.");
+
+    X(ctrl);
+    Controlled op([ctrl], (x, ans));
+    X(ctrl);
+    let ans1 : Bool = (MResetZ(ans) == One);
+    
+    op(x, ans);
+    let ans2 : Bool = (MResetZ(ans) == One);
+    Fact(MeasureBigInt(x) == x_val, "x was changed.");
+    Fact(ans1 == ans2, $"Different results from controlled({ans1})/uncontrolled({ans2}).");
+    return ans2;
+}

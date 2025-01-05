@@ -39,3 +39,37 @@ def test_AddConstant(n: int):
         op = f"QuantumArithmetic.AdditionOrig.AddConstant({a}L,_)"
         ans = eval(f"TestUtils.UnaryOpInPlaceCtl({n},{b}L,{op})")
         assert ans == (a+b) % N
+
+
+@pytest.mark.parametrize("n",  [1, 2, 3, 4, 5, 8, 16, 32])
+def test_OverflowBit(n: int):
+    N = 2**n
+    for _ in range(10):
+        a = random.randint(0, N-1)
+        b = random.randint(0, N-1)
+        ci = random.randint(0, 1)  # carry in.
+        ci_txt = "true" if ci == 1 else "false"
+        op = f"QuantumArithmetic.AdditionOrig.OverflowBit({a}L,_,_,{ci_txt})"
+        ans = eval(f"TestUtils.UnaryPredicateCtl({n},{b}L,{op})")
+        assert ans == ((a+b+ci) >= N)
+
+
+@pytest.mark.parametrize("n",  [1, 2, 3, 4, 5, 8, 16, 32])
+def test_CompareConstLT(n: int):
+    N = 2**n
+    for _ in range(10):
+        a = random.randint(0, N-1)
+        b = random.randint(0, N-1)
+        op = f"QuantumArithmetic.AdditionOrig.CompareConstLT({a}L,_,_)"
+        ans = eval(f"TestUtils.UnaryPredicateCtl({n},{b}L,{op})")
+        assert ans == (a < b)
+
+@pytest.mark.parametrize("n",  [1, 2, 3, 4, 5, 8, 16, 32])
+def test_CompareConstLE(n: int):
+    N = 2**n
+    for _ in range(10):
+        a = random.randint(0, N-1)
+        b = random.randint(0, N-1)
+        op = f"QuantumArithmetic.AdditionOrig.CompareConstLE({a}L,_,_)"
+        ans = eval(f"TestUtils.UnaryPredicateCtl({n},{b}L,{op})")
+        assert ans == (a <= b)

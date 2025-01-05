@@ -55,21 +55,22 @@ def test_OverflowBit(n: int):
 
 
 @pytest.mark.parametrize("n",  [1, 2, 3, 4, 5, 8, 16, 32])
-def test_CompareConstLT(n: int):
+def test_Comparisons(n: int):
     N = 2**n
     for _ in range(10):
         a = random.randint(0, N-1)
         b = random.randint(0, N-1)
-        op = f"QuantumArithmetic.AdditionOrig.CompareConstLT({a}L,_,_)"
-        ans = eval(f"TestUtils.UnaryPredicateCtl({n},{b}L,{op})")
-        assert ans == (a < b)
-
-@pytest.mark.parametrize("n",  [1, 2, 3, 4, 5, 8, 16, 32])
-def test_CompareConstLE(n: int):
-    N = 2**n
-    for _ in range(10):
-        a = random.randint(0, N-1)
-        b = random.randint(0, N-1)
-        op = f"QuantumArithmetic.AdditionOrig.CompareConstLE({a}L,_,_)"
-        ans = eval(f"TestUtils.UnaryPredicateCtl({n},{b}L,{op})")
-        assert ans == (a <= b)
+        op1 = f"QuantumArithmetic.AdditionOrig.CompareByConstLT({a}L,_,_)"
+        op2 = f"QuantumArithmetic.AdditionOrig.CompareByConstLE({a}L,_,_)"
+        op3 = f"QuantumArithmetic.AdditionOrig.CompareByConstGT({a}L,_,_)"
+        op4 = f"QuantumArithmetic.AdditionOrig.CompareByConstGE({a}L,_,_)"
+        ans1 = eval(f"TestUtils.UnaryPredicateCtl({n},{b}L,{op1})")
+        ans2 = eval(f"TestUtils.UnaryPredicateCtl({n},{b}L,{op2})")
+        ans3 = eval(f"TestUtils.UnaryPredicateCtl({n},{b}L,{op3})")
+        ans4 = eval(f"TestUtils.UnaryPredicateCtl({n},{b}L,{op4})")
+        assert ans1 == (a < b)
+        assert ans2 == (a <= b)
+        assert ans3 == (a > b)
+        assert ans4 == (a >= b)
+        
+ 

@@ -190,7 +190,7 @@ operation OverflowBit(A : BigInt, B : Qubit[], Ans : Qubit, CarryIn : Bool) : Un
 }
 
 /// Computes Ans ⊕= [A<B].
-operation CompareConstLT(A : BigInt, B : Qubit[], Ans : Qubit) : Unit is Adj + Ctl {
+operation CompareByConstLT(A : BigInt, B : Qubit[], Ans : Qubit) : Unit is Adj + Ctl {
     let n = Length(B);
     let N = 1L <<< n;
     Fact(0L <= A and A < N, "A out of range");
@@ -198,9 +198,21 @@ operation CompareConstLT(A : BigInt, B : Qubit[], Ans : Qubit) : Unit is Adj + C
 }
 
 /// Computes Ans ⊕= [A<=B].
-operation CompareConstLE(A : BigInt, B : Qubit[], Ans : Qubit) : Unit is Adj + Ctl {
+operation CompareByConstLE(A : BigInt, B : Qubit[], Ans : Qubit) : Unit is Adj + Ctl {
     let n = Length(B);
     let N = 1L <<< n;
     Fact(0L <= A and A < N, "A out of range");
     OverflowBit(N-1L-A, B, Ans, true);
+}
+
+/// Computes Ans ⊕= [A>B].
+operation CompareByConstGT(A : BigInt, B : Qubit[], Ans : Qubit) : Unit is Adj + Ctl {
+    CompareByConstLE(A, B, Ans);
+    X(Ans);
+}
+
+/// Computes Ans ⊕= [A>=B].
+operation CompareByConstGE(A : BigInt, B : Qubit[], Ans : Qubit) : Unit is Adj + Ctl {
+    CompareByConstLT(A, B, Ans);
+    X(Ans);
 }

@@ -161,7 +161,7 @@ operation OverflowBit(A : BigInt, B : Qubit[], Ans : Qubit, CarryIn : Bool) : Un
                 }
             } else {
                 Controlled CondX(controls + [B[0]], (A_bits[0], Ans));
-            }            
+            }
         } else {
             use C = Qubit[n-1];
             within {
@@ -174,15 +174,12 @@ operation OverflowBit(A : BigInt, B : Qubit[], Ans : Qubit, CarryIn : Bool) : Un
                 } else {
                     Controlled CondX([B[0]], (A_bits[0], C[0]));
                 }
+                CondX(A_bits[1], C[0]);
                 for i in 1..n-2 {
-                    CondX(A_bits[i], C[i-1]);
                     CondX(A_bits[i], B[i]);
-                    CCNOT(C[i-1], B[i], C[i]);
-                    CondX(A_bits[i], C[i-1]);
-                    CondX(A_bits[i], B[i]);
-                    CondX(A_bits[i], C[i]);
+                    AND(C[i-1], B[i], C[i]);
+                    CondX(Xor(A_bits[i], A_bits[i + 1]), C[i]);
                 }
-                CondX(A_bits[n-1], C[n-2]);
                 CondX(A_bits[n-1], B[n-1]);
             } apply {
                 Controlled CCNOT(controls, (C[n-2], B[n-1], Ans));

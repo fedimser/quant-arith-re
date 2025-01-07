@@ -8,6 +8,6 @@ operation Main() : Unit {
     let a = 10L;
     let b = 5L;
     let t = 1L;
-    let ans = QuantumArithmetic.CG20192.Multiply(n,n,t,a,b);
+    let ans = QuantumArithmetic.CG20192.MultiplyWindow(n,n,t,a,b,2);
     Message($"ans={ans}");
 }

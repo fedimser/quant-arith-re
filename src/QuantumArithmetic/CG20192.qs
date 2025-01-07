@@ -28,4 +28,21 @@ operation Multiply (nx : Int, ny : Int, result_t : BigInt,
     return result;
 }
 
-export Multiply;
+
+operation MultiplyWindow (nx : Int, ny : Int, result_t : BigInt, 
+                    classical_factor_x : BigInt, quantum_factor_y: BigInt,
+                    w: Int) : BigInt {
+    let nt = Max(nx+ny, BitLength(result_t)) + 1;
+    use Quantum_factor_y = Qubit[ny];
+    use Result_t = Qubit[nt];
+    let vy = LittleEndian(Quantum_factor_y);
+    let vt = LittleEndian(Result_t);
+    XorEqualConst(vy, quantum_factor_y);
+    XorEqualConst(vt, result_t);
+    PlusEqualConstTimesLEWindowed(vt, classical_factor_x, vy, w);
+    let a = ForceMeasureResetBigInt(vy, quantum_factor_y);
+    let result = ForceMeasureResetBigInt(vt, result_t + classical_factor_x*quantum_factor_y);
+    return result;
+}
+
+export Multiply, MultiplyWindow;

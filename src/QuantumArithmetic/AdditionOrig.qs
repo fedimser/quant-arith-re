@@ -68,7 +68,7 @@ operation CondX(control : Bool, target : Qubit) : Unit is Ctl + Adj {
 }
 
 /// Computes B:=(A+B)%(2^n), controlled on `controls`.
-/// Must be 1<=A<2^N, A-odd.
+/// Must be 1<=A<2^n, A-odd.
 operation AddConstantInternal(controls : Qubit[], A : BigInt, B : Qubit[]) : Unit is Adj {
     let n = Length(B);
     let A_bits = Std.Convert.BigIntAsBoolArray(A, n);
@@ -128,7 +128,6 @@ operation AddConstantInternal(controls : Qubit[], A : BigInt, B : Qubit[]) : Uni
     Controlled X(controls, (B[0]));
 }
 
-
 /// Computes B:=(A+B)%(2^n).
 operation AddConstant(A : BigInt, B : Qubit[]) : Unit is Ctl + Adj {
     body (...) {
@@ -143,4 +142,77 @@ operation AddConstant(A : BigInt, B : Qubit[]) : Unit is Ctl + Adj {
             AddConstantInternal(controls, A >>> tz, B[tz...]);
         }
     }
+}
+
+/// Computes Ans⊕=(A+B+CarryIn)/(2^n).
+operation OverflowBit(A : BigInt, B : Qubit[], Ans : Qubit, CarryIn : Bool) : Unit is Adj + Ctl {
+    body (...) {
+        Controlled OverflowBit([], (A, B, Ans, CarryIn));
+    }
+    controlled (controls, ...) {
+        let n = Length(B);
+        let A_bits = Std.Convert.BigIntAsBoolArray(A, n);
+        if (n == 1) {
+            if (CarryIn) {
+                if (A_bits[0]) {
+                    Controlled X(controls, (Ans));
+                } else {
+                    Controlled CNOT(controls, (B[0], Ans));
+                }
+            } else {
+                Controlled CondX(controls + [B[0]], (A_bits[0], Ans));
+            }
+        } else {
+            use C = Qubit[n-1];
+            within {
+                if (CarryIn) {
+                    if (A_bits[0]) {
+                        X(C[0]);
+                    } else {
+                        CNOT(B[0], (C[0]));
+                    }
+                } else {
+                    Controlled CondX([B[0]], (A_bits[0], C[0]));
+                }
+                CondX(A_bits[1], C[0]);
+                for i in 1..n-2 {
+                    CondX(A_bits[i], B[i]);
+                    AND(C[i-1], B[i], C[i]);
+                    CondX(Xor(A_bits[i], A_bits[i + 1]), C[i]);
+                }
+                CondX(A_bits[n-1], B[n-1]);
+            } apply {
+                Controlled CCNOT(controls, (C[n-2], B[n-1], Ans));
+                Controlled CondX(controls, (A_bits[n-1], Ans));
+            }
+        }
+    }
+}
+
+/// Computes Ans ⊕= [A<B].
+operation CompareByConstLT(A : BigInt, B : Qubit[], Ans : Qubit) : Unit is Adj + Ctl {
+    let n = Length(B);
+    let N = 1L <<< n;
+    Fact(0L <= A and A < N, "A out of range");
+    OverflowBit(N-1L-A, B, Ans, false);
+}
+
+/// Computes Ans ⊕= [A<=B].
+operation CompareByConstLE(A : BigInt, B : Qubit[], Ans : Qubit) : Unit is Adj + Ctl {
+    let n = Length(B);
+    let N = 1L <<< n;
+    Fact(0L <= A and A < N, "A out of range");
+    OverflowBit(N-1L-A, B, Ans, true);
+}
+
+/// Computes Ans ⊕= [A>B].
+operation CompareByConstGT(A : BigInt, B : Qubit[], Ans : Qubit) : Unit is Adj + Ctl {
+    CompareByConstLE(A, B, Ans);
+    X(Ans);
+}
+
+/// Computes Ans ⊕= [A>=B].
+operation CompareByConstGE(A : BigInt, B : Qubit[], Ans : Qubit) : Unit is Adj + Ctl {
+    CompareByConstLT(A, B, Ans);
+    X(Ans);
 }

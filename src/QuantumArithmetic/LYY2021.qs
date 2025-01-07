@@ -261,7 +261,6 @@ function MakeLookupTable(a : BigInt[], N : BigInt) : BigInt[] {
 /// Computes Ans=(a^x)%N.
 /// Ans must be prepared in zero state. a can be anything. Doesn't change x.
 /// Figure 14 in the paper.
-/// With window_size=1, equivalent to Figure 12.
 operation ModExpWindowed(
     x : Qubit[],
     Ans : Qubit[],
@@ -291,65 +290,93 @@ operation ModExpWindowed(
     }
 }
 
-operation ModExpWindowed1(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
-    ModExpWindowed(x, Ans, a, N, 1);
-}
-
-operation ModExpWindowed2(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
-    ModExpWindowed(x, Ans, a, N, 2);
-}
-
-operation ModExpWindowed3(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
-    ModExpWindowed(x, Ans, a, N, 3);
-}
-
-operation ModExpWindowed4(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
-    ModExpWindowed(x, Ans, a, N, 4);
-}
-
-operation ModExpWindowed8(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
-    ModExpWindowed(x, Ans, a, N, 8);
-}
-
 /// Figure 17 in the paper.
-/// Classical algorithm originally descibed in: http://www.jstor.org/stable/2007970
+/// Classical algorithm originally descibed in: http://jstor.org/stable/2007970
 operation ForwardMontgomery(x : Qubit[], y : Qubit[], Ans : Qubit[], Anc : Qubit[], N : BigInt) : Unit is Adj + Ctl {
-    let n = Length(x);
-    Fact(Math.IsCoprimeL(Std.Convert.IntAsBigInt(n), N), "n and N must be coprime.");
-    Fact(Length(y) == n, "Size mismatch.");
-    Fact(Length(Ans) == n, "Size mismatch.");
-    Fact(Length(Anc) == n + 2, "Size mismatch.");
+    let n1 = Length(x);
+    let n2 = Length(y);
+    Fact(N <= 1L <<< (n2-1), "N too large.");
+    Fact(Length(Ans) == n2, "Size mismatch.");
+    Fact(Length(Anc) == n2 + 2, "Size mismatch.");
 
-    for i in 0..n-1 {
+    for i in 0..n1-1 {
         if (i == 0) {
             Controlled ParallelCNOT([x[0]], (y, Ans));
         } else {
-            Controlled CDKM2004.AddWithCarry([x[i]], (y, Ans, Anc[0]));  // Warrning! CCCNOT!
+            Controlled CDKM2004.AddWithCarry([x[i]], (y, Ans, Anc[0]));
         }
         CNOT(Ans[0], Anc[i + 1]);
         Controlled AddConstant([Anc[i + 1]], (N, Ans + [Anc[0]]));
         RightShift(Ans + [Anc[0]]);
     }
-    CompareByConst(N, Ans + [Anc[0]], Anc[n + 1]);
-    X(Anc[n + 1]);
-    Controlled SubtractConstant([Anc[n + 1]], (N, Ans + [Anc[0]]));
+    CompareByConst(N, Ans + [Anc[0]], Anc[n2 + 1]);
+    X(Anc[n2 + 1]);
+    Controlled SubtractConstant([Anc[n2 + 1]], (N, Ans + [Anc[0]]));
 }
 
-/// Computes Ans ⊕= ((x*y)/2^n)%N.
+/// Computes Ans ⊕= ((x*y)/2^n2)%N, where n2=Length(y).
 /// Doesn't change x, y.
-/// Warning! Must be 0<=y<N, and gcd(n,N)=1.
+/// Constraints: 0<=y<N, 3<=N<=2^n2-1, N-odd.
 /// Figure 16 in the paper.
-/// TODO: this is incorrect for some pairs (n,N). Fix it!
-/// TODO: Montgomery-based ModExp.
 operation ModMulMontgomery(x : Qubit[], y : Qubit[], Ans : Qubit[], N : BigInt) : Unit is Adj + Ctl {
-    let n = Length(x);
-    use TmpAns = Qubit[n];
-    use Anc = Qubit[n + 2];
-    within {
-        ForwardMontgomery(x, y, TmpAns, Anc, N);
-    } apply {
-        ParallelCNOT(TmpAns, Ans);
+    let n2 = Length(y);
+    Fact(Length(Ans) == n2, "Size mismatch.");
+    Fact(N % 2L == 1L, "N must be odd.");
+    Fact(N < (1L <<< n2), "N too large.");
+    if (N > 1L <<< (n2-1)) {
+        // Need to pad y with extra qubit.
+        use y_pad = Qubit();
+        use TmpAns = Qubit[n2 + 1];
+        use Anc = Qubit[n2 + 3];
+        within {
+            ForwardMontgomery(x, y + [y_pad], TmpAns, Anc, N);
+        } apply {
+            ParallelCNOT(TmpAns[0..n2-1], Ans);
+        }
+    } else {
+        use TmpAns = Qubit[n2];
+        use Anc = Qubit[n2 + 2];
+        within {
+            ForwardMontgomery(x, y, TmpAns, Anc, N);
+        } apply {
+            ParallelCNOT(TmpAns, Ans);
+        }
     }
 }
 
-export ModExp, ModExpWindowed, TableLookup;
+/// Computes Ans=(a^x)%N.
+/// Ans must be prepared in zero state. a can be anything. Doesn't change x.
+/// Figure 14 in the paper.
+/// With window_size=1, equivalent to Figure 12.
+operation ModExpWindowedMontgomery(
+    x : Qubit[],
+    Ans : Qubit[],
+    a : BigInt,
+    N : BigInt,
+    window_size : Int
+) : Unit is Adj + Ctl {
+    let n1 = Length(x);
+    let n2 = Length(Ans);
+    let a_sqs = Utils.ComputeSequentialSquares(a, N, n1);
+    let window_count = Utils.DivCeil(n1, window_size);
+    use Anc1 = Qubit[window_count * n2];
+    let y : Qubit[][] = Rearrange2D(Anc1, window_count, n2);  // Intermediary results.
+    use Anc2 = Qubit[window_count * n2];
+    let lkp : Qubit[][] = Rearrange2D(Anc2, window_count, n2); // Looked up values.
+    within {
+        X(y[0][0]);  // y[0] := 1.
+        for i in 0..window_count-2 {
+            let x_range = i * window_size..(i * window_size + window_size-1);
+            let lookup_table = Std.Arrays.Mapped(x -> (x <<< n2) % N, MakeLookupTable(a_sqs[x_range], N));
+            TableLookup(x[x_range], lkp[i], lookup_table);
+            ModMulMontgomery(lkp[i], y[i], y[i + 1], N);
+        }
+        let x_range = (window_count-1) * window_size..n1-1;
+        let lookup_table = Std.Arrays.Mapped(x -> (x <<< n2) % N, MakeLookupTable(a_sqs[x_range], N));
+        TableLookup(x[x_range], lkp[window_count-1], lookup_table);
+    } apply {
+        ModMulMontgomery(lkp[window_count-1], y[window_count-1], Ans, N);
+    }
+}
+
+export ModExp, ModExpWindowed, ModExpWindowedMontgomery, TableLookup;

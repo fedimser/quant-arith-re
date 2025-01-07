@@ -1,12 +1,13 @@
+import QuantumArithmetic.MCT2017.Multiply;
 import TestUtils.*;
 import QuantumArithmetic.Utils;
 
-
 // For debugging, run with Ctrl+F5,
 operation Main() : Unit {
-    let n = 8;
-    let m = 1;
-    let table: BigInt[] = [15L, 68L];
-    QuantumArithmetic.LYY2021Test.TestTableLookup(n,m,table);
-    
+    let n = 4;
+    let a = 10L;
+    let b = 5L;
+    let t = 1L;
+    let ans = QuantumArithmetic.CG20192.Multiply(n,n,t,a,b);
+    Message($"ans={ans}");
 }

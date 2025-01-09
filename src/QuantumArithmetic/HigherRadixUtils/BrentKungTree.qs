@@ -11,7 +11,10 @@ import Std.Arrays.Zipped;
 /// Function to generate the Brent-Kung tree matrix
 function BK_tree(num_qubits : Int) : Int[][] {
     let bitwidth_i = num_qubits -1;
-    let log2_bitwidth : Int = Ceiling(Lg(IntAsDouble(bitwidth_i)));
+    if (bitwidth_i == 0){
+       return Repeated(Repeated(-1, 0), 0); 
+    }
+    let log2_bitwidth : Int = BitLength(bitwidth_i); //Ceiling(Lg(IntAsDouble(bitwidth_i)));
     mutable shift_length : Int = 0;
     mutable starting_index : Int = 0;
     mutable starting_value : Int = 0;
@@ -94,7 +97,33 @@ function BK_tree(num_qubits : Int) : Int[][] {
         }
     }
 
+
+
     return tree_matrice;
+}
+
+function get_BK_ops(BK_tree: Int[][]) : (Int, Int, Int)[] {
+    mutable num_ops : Int = 0;
+    for i in 0..Length(BK_tree)-1{
+        for j in 0..Length(BK_tree[0])-1{
+            if BK_tree[i][j] != j {
+                set num_ops += 1;
+            }
+        }
+    }
+
+    mutable op_list = Repeated((0, 0, 0), num_ops);
+    set num_ops = 0;
+    for i in 0..Length(BK_tree)-1{
+        for j in 0..Length(BK_tree[0])-1{
+            if BK_tree[i][j] != j {
+                set op_list w/= num_ops <- (i, j, BK_tree[i][j]);
+                set num_ops += 1;
+            }
+        }
+    }
+
+    return op_list;
 }
 
 function get_columns_of_importance(BK_tree: Int[][], row: Int, col_length: Int) : Int[] {
@@ -116,6 +145,17 @@ function get_columns_of_importance(BK_tree: Int[][], row: Int, col_length: Int) 
 
     return col_of_impt;
 
+}
+
+operation simpleBKTree_Process(BK_operations: (Int, Int, Int)[], qubits_p: Qubit[], qubits_g: Qubit[], ancilla: Qubit[]) : Unit is Adj + Ctl{
+    for i in 0..Length(BK_operations)-1{
+        let (row, col, val) = BK_operations[i];
+        // calculate P
+        CCNOT(qubits_p[val], qubits_p[col], ancilla[i]);
+        // calculate G
+        CCNOT(qubits_g[val], qubits_p[col], qubits_g[col]);
+        SWAP(qubits_p[col], ancilla[i]);
+    } 
 }
 
 
@@ -160,6 +200,16 @@ operation BKTree_process(BK_tree: Int[][], qubits_p: Qubit[], qubits_g: Qubit[],
     }
 }
 
+function BitLength(x: Int) : Int {
+    mutable length = 0;
+    mutable value = x;
+    while (value > 0) {
+        set length += 1;
+        set value /= 2;
+    }
+    return length;
+}
+
 function num_ancilla(BK_tree: Int[][]) : Int{
     mutable counter : Int = 0;
     let col_length : Int = Length(BK_tree[0]) -1;
@@ -200,11 +250,12 @@ operation generate_BrentKung_tree(p_pairs : Qubit[], g_pairs: Qubit[] ) : Unit i
 
         // call recursive function with all the stuff
         BKTree_process(BK_tree, p_pairs, g_pairs, bk_ancilla, ancilla_index, col_length, row);
-
-
-
     }
-    
+}
 
 
+operation calculate_carry_with_BKTree(p_pairs : Qubit[], g_pairs: Qubit[] ) : Unit is Adj + Ctl {
+    let BK_operations = get_BK_ops(BK_tree(Length(p_pairs)));
+    use bk_ancilla = Qubit[Length(BK_operations)];
+    simpleBKTree_Process(BK_operations, p_pairs, g_pairs, bk_ancilla);
 }

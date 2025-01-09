@@ -31,7 +31,7 @@ operation AddWithCarry(A : Qubit[], B : Qubit[], S : Qubit[], carry : Qubit) : U
 
 /// Computes S:=(A+B)%(2^n).
 /// S must be prepared in zero state.
-operation AddMod2N(A : Qubit[], B : Qubit[], S : Qubit[]) : Unit is Adj {
+operation Add_Mod2N(A : Qubit[], B : Qubit[], S : Qubit[]) : Unit is Adj {
     let n = Length(A);
     Fact(Length(B) == n, "Size mismatch.");
     Fact(Length(S) == n, "Size mismatch.");
@@ -40,4 +40,4 @@ operation AddMod2N(A : Qubit[], B : Qubit[], S : Qubit[]) : Unit is Adj {
     CNOT(B[n-1], S[n-1]);
 }
 
-export AddWithCarry, AddMod2N;
+export AddWithCarry, Add_Mod2N;

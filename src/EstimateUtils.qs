@@ -52,3 +52,17 @@ operation RunModExp(n : Int, op : (Qubit[], Qubit[], BigInt, BigInt) => Unit) : 
     mutable a : BigInt = 59604644783353249L;  // A fixed prime number.
     op(x_qubits, ans, a, N);
 }
+
+operation RunRadix(n: Int, radix: Int, op : (Qubit[], Qubit[], Qubit[], Int, (Qubit[], Qubit[], Qubit[]) => Unit is Adj) => Unit is Adj, adder_op: (Qubit[], Qubit[], Qubit[]) => Unit is Adj) : Unit {
+    use a = Qubit[n];
+    use b = Qubit[n];
+    use c = Qubit[n];
+    op(a, b, c, radix, adder_op);
+}
+
+operation RunRadixCarry(n: Int, radix: Int, op : (Qubit[], Qubit[], Qubit[], Int, (Qubit[], Qubit[], Qubit[], Qubit) => Unit is Adj) => Unit is Adj, adder_op: (Qubit[], Qubit[], Qubit[], Qubit) => Unit is Adj) : Unit {
+    use a = Qubit[n];
+    use b = Qubit[n];
+    use c = Qubit[n];
+    op(a, b, c, radix, adder_op);
+}

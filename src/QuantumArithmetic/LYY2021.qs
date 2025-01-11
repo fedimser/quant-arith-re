@@ -290,6 +290,14 @@ operation ModExpWindowed(
     }
 }
 
+/// Computes Ans=(a^x)%N.
+/// Uses the optimal window size, which is 2*log_2(n).
+operation ModExpWindowedOptimal(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is Adj + Ctl {
+    let n = Std.Convert.IntAsDouble(Length(Ans));
+    let window_size = Math.Round(2.0 * Math.Log(n) / Math.Log(2.0));
+    ModExpWindowed(x, Ans, a, N, window_size);
+}
+
 /// Figure 17 in the paper.
 /// Classical algorithm originally descibed in: http://jstor.org/stable/2007970
 operation ForwardMontgomery(x : Qubit[], y : Qubit[], Ans : Qubit[], Anc : Qubit[], N : BigInt) : Unit is Adj + Ctl {
@@ -379,4 +387,4 @@ operation ModExpWindowedMontgomery(
     }
 }
 
-export ModExp, ModExpWindowed, ModExpWindowedMontgomery, TableLookup;
+export ModExp, ModExpWindowed, ModExpWindowedMontgomery, ModExpWindowedOptimal, TableLookup;

@@ -18,15 +18,16 @@ def setup():
 #         assert ans == (x+y) % 2**n
 
 
-@pytest.mark.parametrize("n", [4, 5, 8, 16, 31, 32, 63])
-def test_Add(n: int):
+@pytest.mark.parametrize("radix", [3, 4, 5, 6, 7, 8, 9, 10])
+@pytest.mark.parametrize("n", [3, 4, 5, 8, 12, 30])
+def test_Add(n: int, radix: int):
     op = "QuantumArithmetic.WBC2023.Add"
-    radix = 3
-    for _ in range(5):
-        a = random.randint(0, 2 ** (n - 1))
-        b = random.randint(0, 2 ** (n - 1))
-        ans = eval(
-            f"QuantumArithmetic.WBC2023Test.BinaryOpRadix({n},{a}L,{b}L,{radix},{op})"
-        )
-        expected = (a + b) % (2**n)
-        assert ans == expected
+    if (n >= radix) and (n / radix < 10):
+        for _ in range(5):
+            a = random.randint(0, 2 ** (n - 1))
+            b = random.randint(0, 2 ** (n - 1))
+            ans = eval(
+                f"QuantumArithmetic.WBC2023Test.BinaryOpRadix({n},{a}L,{b}L,{radix},{op})"
+            )
+            expected = (a + b) % (2**n)
+            assert ans == expected

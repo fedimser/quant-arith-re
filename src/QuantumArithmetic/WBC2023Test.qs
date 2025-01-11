@@ -2,7 +2,6 @@ import Std.Diagnostics.Fact;
 import TestUtils.*;
 
 operation BinaryOpRadix(n : Int, x_val : BigInt, y_val : BigInt, radix : Int, op : (Qubit[], Qubit[], Qubit[], Int) => Unit) : BigInt {
-    // Message($"x_val={x_val} y_val={y_val} n={n}");
     use x = Qubit[n];
     use y = Qubit[n];
     use z = Qubit[n];
@@ -12,7 +11,32 @@ operation BinaryOpRadix(n : Int, x_val : BigInt, y_val : BigInt, radix : Int, op
     let new_x = MeasureBigInt(x);
     let new_y = MeasureBigInt(y);
     let ans = MeasureBigInt(z);
-    // Message($"x_val={x_val} y_val={y_val} n={n} x={new_x} y={new_y} z={ans}");
+    return ans;
+}
+
+operation BinaryOpRadixWithOp(n : Int, x_val : BigInt, y_val : BigInt, radix : Int, op : (Qubit[], Qubit[], Qubit[], Int, (Qubit[], Qubit[], Qubit[]) => Unit is Adj) => Unit, adder_op : (Qubit[], Qubit[], Qubit[]) => Unit is Adj) : BigInt {
+    use x = Qubit[n];
+    use y = Qubit[n];
+    use z = Qubit[n];
+    ApplyBigInt(x_val, x);
+    ApplyBigInt(y_val, y);
+    op(x, y, z, radix, adder_op);
+    let new_x = MeasureBigInt(x);
+    let new_y = MeasureBigInt(y);
+    let ans = MeasureBigInt(z);
+    return ans;
+}
+
+operation BinaryOpRadixWithCarry(n : Int, x_val : BigInt, y_val : BigInt, radix : Int, op : (Qubit[], Qubit[], Qubit[], Int, (Qubit[], Qubit[], Qubit[], Qubit) => Unit is Adj) => Unit, adder_op : (Qubit[], Qubit[], Qubit[], Qubit) => Unit is Adj) : BigInt {
+    use x = Qubit[n];
+    use y = Qubit[n];
+    use z = Qubit[n];
+    ApplyBigInt(x_val, x);
+    ApplyBigInt(y_val, y);
+    op(x, y, z, radix, adder_op);
+    let new_x = MeasureBigInt(x);
+    let new_y = MeasureBigInt(y);
+    let ans = MeasureBigInt(z);
     return ans;
 }
 

@@ -1,14 +1,11 @@
-import QuantumArithmetic.WBC2023_new.BrentKung;
-import Std.Diagnostics.DumpMachine;
-// this is the main file to handle higher radix used in
-// the file WBC2023.qs
+/// this is the main file to handle higher radix used in the file WBC2023.qs
 
 import QuantumArithmetic.HigherRadixUtils.BrentKungTree;
-import QuantumArithmetic.WBC2023.ApplyAndAssuming0Target;
-import Std.Diagnostics.DumpRegister;
+import QuantumArithmetic.WBC2023.LogicalAND;
 
 
-operation computeCarryHigherRadix(A: Qubit[], B: Qubit[], carry_bits: Qubit[], radix: Int, num_groups: Int) : Unit is Adj + Ctl {
+/// Computes the carries for a higher radix using Brent Kung methods
+operation computeCarryHigherRadix(A: Qubit[], B: Qubit[], carry_bits: Qubit[], radix: Int, num_groups: Int) : Unit is Adj {
 
     // designate ancillas
     use ancilla = Qubit[num_groups*radix];
@@ -37,9 +34,10 @@ operation computeCarryHigherRadix(A: Qubit[], B: Qubit[], carry_bits: Qubit[], r
 
 }
 
-operation calculate_g(A: Qubit[], B: Qubit[], ancilla: Qubit[]) : Unit is Adj + Ctl {
+operation calculate_g(A: Qubit[], B: Qubit[], ancilla: Qubit[]) : Unit is Adj {
     for i in 0..Length(A)-1 {
-        CCNOT(A[i], B[i], ancilla[i]);
+        // CCNOT(A[i], B[i], ancilla[i]);
+        LogicalAND(A[i], B[i], ancilla[i]);
     }
 }
 
@@ -55,10 +53,12 @@ operation calculate_p_groups(p: Qubit[], ancilla : Qubit[], radix : Int) : Unit 
     }
 }
 
-operation calculate_g_groups(p: Qubit[], g: Qubit[], radix: Int, num_groups: Int) : Unit is Adj + Ctl {
+operation calculate_g_groups(p: Qubit[], g: Qubit[], radix: Int, num_groups: Int) : Unit is Adj {
     for i in 0..num_groups-1{
         for j in 0..radix-2{
-            CCNOT(g[i*radix+j], p[i*radix+j+1], g[i*radix+j+1]);
+            // CCNOT(g[i*radix+j], p[i*radix+j+1], g[i*radix+j+1]);
+            LogicalAND(g[i*radix+j], p[i*radix+j+1], g[i*radix+j+1]);
+            
         }
     }
 }

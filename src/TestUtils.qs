@@ -206,3 +206,16 @@ operation UnaryPredicateCtl(n : Int, x_val : BigInt, op : (Qubit[], Qubit) => Un
     Fact(ans1 == ans2, $"Different results from controlled({ans1})/uncontrolled({ans2}).");
     return ans2;
 }
+
+operation TestCompare(n : Int, a_val : BigInt, b_val : BigInt, op : (Qubit[], Qubit[], Qubit) => Unit) : Bool {
+    use a = Qubit[n];
+    use b = Qubit[n];
+    use ans = Qubit();
+    ApplyBigInt(a_val, a);
+    ApplyBigInt(b_val, b);
+    op(a, b, ans);
+    Fact(MeasureBigInt(a) == a_val, "a was changed.");
+    Fact(MeasureBigInt(b) == b_val, "b was changed.");
+    // a < b if ans=1, return true
+    return MResetZ(ans) == One; 
+}

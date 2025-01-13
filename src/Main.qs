@@ -1,13 +1,12 @@
-import QuantumArithmetic.MCT2017.Multiply;
+import QuantumArithmetic.Xin2018.CompareLess;
 import TestUtils.*;
 import QuantumArithmetic.Utils;
 
 // For debugging, run with Ctrl+F5,
 operation Main() : Unit {
-    let n = 4;
-    let a = 10L;
-    let b = 5L;
-    let t = 1L;
-    let ans = QuantumArithmetic.CG20192.MultiplyWindow(n,n,t,a,b,2);
+    let n = 1;
+    let a = 1L;
+    let b = 1L;
+    let ans = TestCompare(n, a, b, CompareLess);
     Message($"ans={ans}");
 }

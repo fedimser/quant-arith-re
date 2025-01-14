@@ -30,6 +30,7 @@
       "src/QuantumArithmetic/WBC2023_new.qs",
       "src/QuantumArithmetic/SC2023.qs",
       "src/QuantumArithmetic/Xin2018.qs",
+      "src/QuantumArithmetic/Orts2024.qs",
       "src/QuantumArithmetic/HigherRadixUtils/BrentKungTree.qs",
       "src/QuantumArithmetic/HigherRadixUtils/HigherRadix.qs",
       "src/QuantumArithmetic/WindowedArithmeticUtils/Addition.qs",

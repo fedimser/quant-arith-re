@@ -2,7 +2,14 @@
 ///   Windowed quantum arithmetic
 ///   Craig Gidney, 2019.
 ///   https://arxiv.org/abs/1905.07682
-/// All numbers are integer, Little Endian.
+///
+/// This code and utils in WindowedArithmeticUtils are adapted from
+/// https://github.com/Strilanc/windowed-quantum-arithmetic
+///
+/// Acknowledgment:
+///   We thank Craig Gidney for the work presented in the paper and
+///   the GitHub repo that inspired and guided this implementation. 
+
 
 import QuantumArithmetic.WindowedArithmeticUtils.Util.Max;
 import QuantumArithmetic.WindowedArithmeticUtils.Util.FloorLg2;

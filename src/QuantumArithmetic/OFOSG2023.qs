@@ -191,7 +191,7 @@ operation ApplyWallaceTreeCircuit(circuit : WTCircuit, qs : Qubit[]) : Unit is A
 
 /// Computes C = A*B using Wallace Tree.
 /// TODO: remove "v2".
-operation MultiplyWallaceTree_v2(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit is Adj + Ctl {
+operation MultiplyWallaceTree(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit is Adj + Ctl {
     let n1 = Length(A);
     let n2 = Length(B);
     Fact(Length(C) == n1 + n2, "Size mismatch");
@@ -220,4 +220,4 @@ operation MultiplyWallaceTreeIrr(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit {
     ResetAll(ancillas);
 }
 
-export MultiplyWallaceTree_v2, MultiplyWallaceTreeIrr;
+export MultiplyWallaceTree, MultiplyWallaceTreeIrr;

@@ -1,231 +1,85 @@
-import Std.Diagnostics.DumpMachine;
 /// Implementation of the adder presented in paper:
 /// A Higher radix architecture for quantum carry-lookahead adder
 /// Wang, Baksi, Chattopadhyay, 2024.
 /// https://www.nature.com/articles/s41598-023-41122-4
+/// The paper uses the Gidney 2008 RCA which is implemented in 
+/// Std.Arithmetic.RippleCarryCGAddByLE
+///
+/// NOTE: This implementation varies from the paper by being an
+/// out of place adder, all CCNOTs are paired and use Gidney decomposition,
+/// and 
+///
+/// All numbers are unsigned integers, little-endian.
 
-import Std.Diagnostics.DumpMachine;
 import Std.Diagnostics.Fact;
-import QuantumArithmetic.HigherRadixUtils.HigherRadix.HigherRadix;
-import QuantumArithmetic.AdditionStd.Add_CG;
+import QuantumArithmetic.HigherRadixUtils.HigherRadix.computeCarryHigherRadix;
+import Std.Math.Ceiling;
+import Std.Convert.IntAsDouble;
+import QuantumArithmetic.Utils;
 
-// Main Add function that takes A, B, and the radix
-// The first step is setup the higher radix
-// Then the Gidney RCA is used
-operation Add(A: Qubit[], B: Qubit[], radix: Int) : Unit is Adj {
+/// Computes Z=A+B modulo 2^n using the provided radix
+/// This is the default which uses Gidney 2008 RCA
+operation Add(A: Qubit[], B: Qubit[], Z: Qubit[], radix: Int) : Unit is Adj {
+    AddWithOp(A, B, Z, radix, Std.Arithmetic.RippleCarryCGAddLE);
+}
+
+/// Computes Z=A+B modulo 2^n using the provided radix.
+/// This allows the user to pass in the adder operation.
+/// The adder operation computes Z:=A+B+Z[0] where Z[0] is the carry in qubit.
+operation AddWithOp(A: Qubit[], B: Qubit[], Z: Qubit[], radix: Int, adder_op: (Qubit[], Qubit[], Qubit[]) => Unit is Adj) : Unit is Adj {
     let n : Int = Length(A);
     Fact(Length(B) == n, "Register sizes must match.");
 
-    use ancilla = Qubit[n];
+    // determine the number of groups
+    let num_groups : Int = Ceiling(IntAsDouble(Length(B))/IntAsDouble(radix))-1;
 
-    //DEBUG
-    // Message("Starting State:");
-    // DumpMachine();
+    // calculate carry bits and store them in Z[0] for each group 
+    computeCarryHigherRadix(A, B, Z[radix..radix..num_groups*radix], radix, num_groups);
 
-    // call higher radix function that returns an initial state 
-    HigherRadix(A, B, ancilla, radix);
-
-
-    //DEBUG
-    // Message("After higher radix before addition:");
-    // DumpMachine();
-
-
-    // first round does not include a carry in
-    first_RCA_CG(A[0..radix-1], B[0..radix-1], ancilla[0..radix-2]);
-
-    // the rest of the groups include the carry
-    for i in 1..n/radix-1 {
-        RCA_CG(A[i*radix..(i+1)*radix-1], B[i*radix..(i+1)*radix-1], ancilla[i*radix-1..(i+1)*radix-2]);
+    // Perform Gidney's RCA  from Q# Std library on groups
+    for i in 0..num_groups-1 {
+        adder_op(A[i*radix..(i+1)*radix-1], B[i*radix..(i+1)*radix-1], Z[i*radix..(i+1)*radix-1]);
     }
 
-    // Currently error about an ancillary qubit not in state |0>
-    // ResetAll(ancilla);
-
-    // DEBUG
-    DumpMachine();
-    
-    for i in 0..n/radix-1{
-        Message($"B{i} : {B[i*radix..(i+1)*radix-1]}");
-    }
-    Message("final state:");
-
-    // 00100 00000 00000
-    // 100100000000000
-    // 00100 00000 00000
-
-
+    adder_op(A[num_groups*radix...], B[num_groups*radix...], Z[num_groups*radix...]);
 }
 
-operation first_RCA_CG(A: Qubit[], B: Qubit[], ancilla: Qubit[]) : Unit is Adj + Ctl {
-    let alen : Int = Length(A);
-    // carry_in would normally be ancilla[0], but for first group it is not needed
-    within {
-            ApplyAndAssuming0Target(A[0], B[0], ancilla[0]);
-    } apply {
-        for i in 1..alen - 2 {
-            CarryForInc(ancilla[i - 1], A[i], B[i], ancilla[i]);
+/// Computes Z=A+B modulo 2^n using the provided radix
+/// This allows the user to pass the adder operation.
+/// The adder operation computes Z:=A+B+c_in where c_in is a single qubit.
+operation AddWithCarry(A: Qubit[], B: Qubit[], Z: Qubit[], radix: Int, adder_op: (Qubit[], Qubit[], Qubit[], Qubit) => Unit is Adj) : Unit is Adj {
+    let n : Int = Length(A);
+    Fact(Length(B) == n, "Register sizes must match.");
+
+    // determine the number of groups
+    let num_groups : Int = Ceiling(IntAsDouble(Length(B))/IntAsDouble(radix))-1;
+
+    // get carry bits for all groups including |0> for the first group
+    use carry_bits = Qubit[num_groups+1];
+    use temp_Z = Qubit[Length(Z)];
+
+    within{
+
+        // calculate carry bits and store them in Z[0] for each group 
+        computeCarryHigherRadix(A, B, carry_bits[1...], radix, num_groups);
+
+        // Perform Gidney's RCA  from Q# Std library on groups
+        for i in 0..num_groups-1 {
+            adder_op(A[i*radix..(i+1)*radix-1], B[i*radix..(i+1)*radix-1], temp_Z[i*radix..(i+1)*radix-1], carry_bits[i]);
         }
-        CNOT(ancilla[alen - 2], B[alen - 1]);
-        for i in alen - 2..-1..1 {
-            UncarryForInc(ancilla[i - 1], A[i], B[i], ancilla[i]);
-        }
-    }
-    for i in 0..alen-1{
-        CNOT(A[i], B[i]); 
-    }
-}
 
-operation RCA_CG(A: Qubit[], B: Qubit[], ancilla: Qubit[]) : Unit is Adj + Ctl {
-    let alen : Int = Length(A);
-    
-    for i in 0..alen - 2 {
-        CarryForInc(ancilla[i], A[i], B[i], ancilla[i+1]);
-    }
-    CNOT(ancilla[alen - 1], B[alen - 1]);
-    for i in alen - 2..-1..0 {
-        UncarryForInc(ancilla[i], A[i], B[i], ancilla[i+1]);
-    }
-    for i in 0..alen-1{
-        CNOT(A[i], B[i]); 
+        // Perform Gidney's RCA from Q# Std library on greatest signifcant bits
+        adder_op(A[num_groups*radix...], B[num_groups*radix...], temp_Z[num_groups*radix...], carry_bits[num_groups]);
+
+    } 
+    apply { 
+        Utils.ParallelCNOT(temp_Z, Z);
     }
 
 }
 
-/// # Summary
-/// Computes carry bit for a full adder.
-operation CarryForInc(carryIn : Qubit, x : Qubit, y : Qubit, carryOut : Qubit) : Unit is Adj + Ctl {
-    body (...) {
-        CNOT(carryIn, x);
-        CNOT(carryIn, y);
-        ApplyAndAssuming0Target(x, y, carryOut);
-        CNOT(carryIn, carryOut);
-    }
-    adjoint auto;
-    controlled (ctls, ...) {
-        // This CarryForInc is intended to be used only in an in-place
-        // ripple-carry implementation. Only such particular use case allows
-        // for this simple implementation where controlled version
-        // is the same as uncontrolled body.
-        CarryForInc(carryIn, x, y, carryOut);
-    }
-    controlled adjoint auto;
-}
-
-/// # Summary
-/// Uncomputes carry bit for a full adder.
-operation UncarryForInc(carryIn : Qubit, x : Qubit, y : Qubit, carryOut : Qubit) : Unit is Adj + Ctl {
-    body (...) {
-        CNOT(carryIn, carryOut);
-        Adjoint ApplyAndAssuming0Target(x, y, carryOut);
-        CNOT(carryIn, x);
-        //CNOT(x, y);
-    }
-    adjoint auto;
-    controlled (ctls, ...) {
-        Fact(Length(ctls) == 1, "UncarryForInc should be controlled by exactly one control qubit.");
-
-        let ctl = ctls[0];
-
-        CNOT(carryIn, carryOut);
-        Adjoint ApplyAndAssuming0Target(x, y, carryOut);
-        CCNOT(ctl, x, y); // Controlled X(ctls + [x], y);
-        CNOT(carryIn, x);
-        CNOT(carryIn, y);
-    }
-    controlled adjoint auto;
-}
-
-operation RippleCarryCGIncByLE(xs : Qubit[], ys : Qubit[]) : Unit is Adj + Ctl {
-    let xsLen = Length(xs);
-    let ysLen = Length(ys);
-
-    Fact(ysLen >= xsLen, "Register `ys` must be longer than register `xs`.");
-    Fact(xsLen >= 1, "Registers `xs` and `ys` must contain at least one qubit.");
-
-    if xsLen == 1 {
-        if ysLen == 1 {
-            CNOT(xs[0], ys[0]);
-        } elif ysLen == 2 {
-            HalfAdderForInc(xs[0], ys[0], ys[1]);
-        }
-    } else {
-        use carries = Qubit[xsLen];
-        within {
-            ApplyAndAssuming0Target(xs[0], ys[0], carries[0]);
-        } apply {
-            for i in 1..xsLen - 2 {
-                CarryForInc(carries[i - 1], xs[i], ys[i], carries[i]);
-            }
-            if xsLen == ysLen {
-                within {
-                    CNOT(carries[xsLen - 2], xs[xsLen - 1]);
-                } apply {
-                    CNOT(xs[xsLen - 1], ys[xsLen - 1]);
-                }
-            } else {
-                FullAdderForInc(carries[xsLen - 2], xs[xsLen - 1], ys[xsLen - 1], ys[xsLen]);
-            }
-            for i in xsLen - 2..-1..1 {
-                UncarryForInc(carries[i - 1], xs[i], ys[i], carries[i]);
-            }
-        }
-        CNOT(xs[0], ys[0]);
-    }
-}
-
-operation HalfAdderForInc(x : Qubit, y : Qubit, carryOut : Qubit) : Unit is Adj + Ctl {
-    body (...) {
-        CCNOT(x, y, carryOut);
-        CNOT(x, y);
-    }
-    adjoint auto;
-
-    controlled (ctls, ...) {
-        Fact(Length(ctls) == 1, "HalfAdderForInc should be controlled by exactly one control qubit.");
-
-        let ctl = ctls[0];
-        use helper = Qubit();
-
-        within {
-            ApplyAndAssuming0Target(x, y, helper);
-        } apply {
-            ApplyAndAssuming0Target(ctl, helper, carryOut);
-        }
-        CCNOT(ctl, x, y);
-    }
-    controlled adjoint auto;
-}
-
-/// # Summary
-/// Implements Full-adder. Adds qubit carryIn and x to qubit y and sets carryOut appropriately.
-operation FullAdderForInc(carryIn : Qubit, x : Qubit, y : Qubit, carryOut : Qubit) : Unit is Adj + Ctl {
-    body (...) {
-        // TODO: cannot use `Carry` operation here
-        CNOT(carryIn, x);
-        CNOT(carryIn, y);
-        CCNOT(x, y, carryOut);
-        CNOT(carryIn, carryOut);
-        CNOT(carryIn, x);
-        CNOT(x, y);
-    }
-    adjoint auto;
-
-    controlled (ctls, ...) {
-        Fact(Length(ctls) == 1, "FullAdderForInc should be controlled by exactly one control qubit.");
-
-        let ctl = ctls[0];
-        use helper = Qubit();
-
-        CarryForInc(carryIn, x, y, helper);
-        CCNOT(ctl, helper, carryOut);
-        Controlled UncarryForInc(ctls, (carryIn, x, y, helper));
-    }
-    controlled adjoint auto;
-}
-@Config(Adaptive)
-operation ApplyAndAssuming0Target(control1 : Qubit, control2 : Qubit, target : Qubit) : Unit is Adj {
-    // NOTE: Eventually this operation will be public and intrinsic.
+/// This acts as a Gidney Logical AND which uses 4 T gates 
+operation LogicalAND(control1 : Qubit, control2 : Qubit, target : Qubit) : Unit is Adj {
     body (...) {
         CCNOT(control1, control2, target);
     }
@@ -235,5 +89,32 @@ operation ApplyAndAssuming0Target(control1 : Qubit, control2 : Qubit, target : Q
             Reset(target);
             CZ(control1, control2);
         }
+    }
+}
+
+/// This CCNOT uses the deomposition Method 3 from the paper for Unpaired CCNOTs
+/// This results in 7 T gates for decomposition
+operation UnpairedCCNOT(control1 : Qubit, control2 : Qubit, target : Qubit) : Unit is Adj {
+    body (...) {
+        CCNOT(control1, control2, target);
+    }
+    adjoint (...) {
+        H(target);
+        T(target);
+        T(control2);
+        Adjoint T(control1);
+        CNOT(control1, control2);
+        CNOT(target, control1);
+        Adjoint T(control1);
+        CNOT(control2, target);
+        CNOT(control2, control1);
+        T(target);
+        Adjoint T(control1);
+        Adjoint T(control2);
+        CNOT(target, control1);
+        S(control1);
+        CNOT(control2, target);
+        CNOT(control1, control2);
+        H(target);
     }
 }

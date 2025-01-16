@@ -26,6 +26,8 @@
       "src/QuantumArithmetic/AKBF2011Test.qs",
       "src/QuantumArithmetic/TMVH2019Test.qs",
       "src/QuantumArithmetic/TR2009.qs",
+      "src/QuantumArithmetic/TR2013.qs",
+      "src/QuantumArithmetic/TR2013Test.qs",
       "src/QuantumArithmetic/Utils.qs",
       "src/QuantumArithmetic/WBC2023.qs",
       "src/QuantumArithmetic/WBC2023Test.qs",

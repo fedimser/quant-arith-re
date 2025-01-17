@@ -1,5 +1,7 @@
-/// Constant Adders and Constant Comparators.
-/// These are original designs, optimized for T-Count.
+/// Constant Adders and Constant Comparators, presented in the paper:
+///   New Circuit for Quantum Adder by Constant
+///   Dmytro Fedoriaka, 2025.
+///   https://arxiv.org/abs/2501.07060
 /// All numbers are unsigned integers, little-endian.
 
 import Std.Diagnostics.Fact;

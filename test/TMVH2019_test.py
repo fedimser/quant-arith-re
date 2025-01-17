@@ -27,6 +27,18 @@ def test_division(div_type: str, adder: str, n: int):
         assert r == x % y
 
 @pytest.mark.parametrize("div_type", ["Divide_Restoring", "Divide_NonRestoring"])
+def test_division_with_QFT_Adder(div_type: str):
+    adder = "Std.Arithmetic.FourierTDIncByLE"
+    n = 5
+    op = f"QuantumArithmetic.TMVH2019Test.Test_{div_type}"
+    cfg = "new QuantumArithmetic.TMVH2019.Config{Adder="+adder+"}"
+    for _ in range(2):
+        x, y = random.randint(0, 2**n-1), random.randint(1, 2**(n-1)-1)
+        q, r = eval(f"{op}({n},{x}L,{y}L,{cfg})")
+        assert q == x//y
+        assert r == x % y
+
+@pytest.mark.parametrize("div_type", ["Divide_Restoring", "Divide_NonRestoring"])
 def test_division_large(div_type: str):
     adder = "Std.Arithmetic.RippleCarryCGIncByLE"
     n = 100

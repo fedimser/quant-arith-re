@@ -96,15 +96,7 @@ operation SWAPViaRelabel(q1 : Qubit, q2 : Qubit) : Unit is Adj {
 /// Doesn't apply any quantum gates.
 operation ApplyPermutation(qubits : Qubit[], P : Int[]) : Unit is Adj {
     Fact(Length(P) == Length(qubits), "Size mismatch.");
-
-    // This line should work, but it doesn't because of Q# bug:
-    //   `Relabel(qubits, Std.Arrays.Mapped(i -> qubits[i], P));`
-    // Because of that, we temporarily decompose permutation into swaps, and
-    // apply swaps using 2-qubit Relabels.
-
-    for (i, j) in PermutationToSwaps(P) {
-        SWAPViaRelabel(qubits[i], qubits[j]);
-    }
+    Relabel(qubits, Std.Arrays.Mapped(i -> qubits[i], P));
 }
 
 /// Rearranges qubits into n1xn2 2-dimensional array.

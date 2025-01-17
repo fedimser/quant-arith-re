@@ -170,6 +170,25 @@ operation Test_Divide_Restoring(n : Int, a_val : Int, b_val : Int, op : (Qubit[]
     return (q_val, new_a_val);
 }
 
+// n is number of bits per register.
+// Returns pair (a_val/b_val, a_val%b_val).
+operation Test_Divide_Unequal(n : Int, a_val : Int, m : Int, b_val : Int, op : (Qubit[], Qubit[], Qubit[]) => Unit) : (Int, Int) {
+    // Fact(b_val < (1 <<< (n-1)), "Must be b<2^(n-1).");
+    Fact(m < n, "Must be m<n.");
+    use a = Qubit[n];
+    use b = Qubit[m];
+    use q = Qubit[n-m+1];
+    ApplyPauliFromInt(PauliX, true, a_val, a);
+    ApplyPauliFromInt(PauliX, true, b_val, b);
+    op(a, b, q);
+    let q_val = MeasureInteger(q);
+    let new_b_val = MeasureInteger(b);
+    let new_a_val = MeasureInteger(a);
+    Fact(new_b_val == b_val, "b was changed.");
+    Message($"a={new_a_val} b={new_b_val} q={q_val}");
+    return (q_val, new_a_val);
+}
+
 operation BinaryOpInPlaceRadix(n : Int, x_val : Int, y_val : Int, radix : Int, op : (Qubit[], Qubit[], Qubit[], Int) => Unit) : Int {
     Message($"x_val={x_val} y_val={y_val} radix={radix}");
     use x = Qubit[n];
@@ -232,4 +251,14 @@ operation Test_Subtract_NotEqualBit(n : Int, a_val : BigInt, m : Int, b_val : Bi
     Fact(MeasureBigInt(a) == a_val, "a was changed.");
     Fact(MeasureBigInt([ctr]) == 1L, "ctr was changed.");
     return MeasureBigInt(b + [s2]);
+}
+
+operation Test_Subtract_Minuend(n : Int, a_val : BigInt, b_val: BigInt, op : (Qubit[], Qubit[]) => Unit) : BigInt {
+    use a = Qubit[n];
+    use b = Qubit[n];
+    ApplyBigInt(a_val, a);
+    ApplyBigInt(b_val, b);
+    op(a, b);
+    Fact(MeasureBigInt(a) == a_val, "a was changed.");
+    return MeasureBigInt(b);
 }

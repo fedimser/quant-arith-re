@@ -17,6 +17,7 @@
       "src/QuantumArithmetic/LYY2021Test.qs",
       "src/QuantumArithmetic/MCT2017.qs",
       "src/QuantumArithmetic/MCT2018.qs",
+      "src/QuantumArithmetic/MSIM2013.qs",
       "src/QuantumArithmetic/NZLS2023.qs",
       "src/QuantumArithmetic/NZLS2023Test.qs",
       "src/QuantumArithmetic/OFOSG2023.qs",

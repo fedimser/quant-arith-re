@@ -65,6 +65,28 @@ operation BinaryOpInPlace(n : Int, x_val : BigInt, y_val : BigInt, op : (Qubit[]
     return ans;
 }
 
+// Tests arbitrary operation acting on 3 registers.
+// Applies `op` on three registers of sizes nx, ny, nz, populated with x,y,z.
+// Returns new values of the registers.
+operation TernaryOp(
+    nx : Int,
+    ny : Int,
+    nz : Int,
+    x : BigInt,
+    y : BigInt,
+    z : BigInt,
+    op : (Qubit[], Qubit[], Qubit[]) => Unit
+) : (BigInt, BigInt, BigInt) {
+    use X = Qubit[nx];
+    use Y = Qubit[ny];
+    use Z = Qubit[nz];
+    ApplyBigInt(x, X);
+    ApplyBigInt(y, Y);
+    ApplyBigInt(z, Z);
+    op(X, Y, Z);
+    return (MeasureBigInt(X), MeasureBigInt(Y), MeasureBigInt(Z));
+}
+
 operation BinaryOpInPlaceExtraOut(n : Int, x_val : BigInt, y_val : BigInt, op : (Qubit[], Qubit[], Qubit) => Unit) : BigInt {
     use x = Qubit[n];
     use y = Qubit[n];
@@ -129,17 +151,12 @@ operation UnaryOpInPlaceCtl(n : Int, x_val : BigInt, op : (Qubit[]) => Unit is C
 }
 
 // Calculates a_val*b_val using out-of-place multiplier `op`.
-// Inputs sizes are `a_size` and `b_size`. Output size is `a_size+b_size`.
-operation TestMultiply(a_size : Int, b_size : Int, a_val : BigInt, b_val : BigInt, op : (Qubit[], Qubit[], Qubit[]) => Unit) : BigInt {
-    use a = Qubit[a_size];
-    use b = Qubit[b_size];
-    use ans = Qubit[a_size + b_size];
-    ApplyBigInt(a_val, a);
-    ApplyBigInt(b_val, b);
-    op(a, b, ans);
-    Fact(MeasureBigInt(a) == a_val, "a was changed.");
-    Fact(MeasureBigInt(b) == b_val, "b was changed.");
-    return MeasureBigInt(ans);
+// Inputs sizes are `nx` and `ny`. Output size is `nx+ny`.
+operation TestMultiply(nx : Int, ny : Int, x : BigInt, y : BigInt, op : (Qubit[], Qubit[], Qubit[]) => Unit) : BigInt {
+    let (new_x, new_y, ans) = TernaryOp(nx, ny, nx + ny, x, y, 0L, op);
+    Fact(new_x == x, "x was changed.");
+    Fact(new_y == y, "y was changed.");
+    return ans;
 }
 
 /// Calculates (a^x)%N using given operation.
@@ -177,7 +194,7 @@ operation Test_Divide_Unequal(n : Int, a_val : Int, m : Int, b_val : Int, op : (
     Fact(m < n, "Must be m<n.");
     use a = Qubit[n];
     use b = Qubit[m];
-    use q = Qubit[n-m+1];
+    use q = Qubit[n-m + 1];
     ApplyPauliFromInt(PauliX, true, a_val, a);
     ApplyPauliFromInt(PauliX, true, b_val, b);
     op(a, b, q);
@@ -218,7 +235,7 @@ operation UnaryPredicateCtl(n : Int, x_val : BigInt, op : (Qubit[], Qubit) => Un
     Controlled op([ctrl], (x, ans));
     X(ctrl);
     let ans1 : Bool = (MResetZ(ans) == One);
-    
+
     op(x, ans);
     let ans2 : Bool = (MResetZ(ans) == One);
     Fact(MeasureBigInt(x) == x_val, "x was changed.");
@@ -236,7 +253,7 @@ operation TestCompare(n : Int, a_val : BigInt, b_val : BigInt, op : (Qubit[], Qu
     Fact(MeasureBigInt(a) == a_val, "a was changed.");
     Fact(MeasureBigInt(b) == b_val, "b was changed.");
     // a < b if ans=1, return true
-    return MResetZ(ans) == One; 
+    return MResetZ(ans) == One;
 }
 
 operation Test_Subtract_NotEqualBit(n : Int, a_val : BigInt, m : Int, b_val : BigInt, op : (Qubit[], Qubit[], Qubit, Qubit) => Unit) : BigInt {
@@ -253,7 +270,7 @@ operation Test_Subtract_NotEqualBit(n : Int, a_val : BigInt, m : Int, b_val : Bi
     return MeasureBigInt(b + [s2]);
 }
 
-operation Test_Subtract_Minuend(n : Int, a_val : BigInt, b_val: BigInt, op : (Qubit[], Qubit[]) => Unit) : BigInt {
+operation Test_Subtract_Minuend(n : Int, a_val : BigInt, b_val : BigInt, op : (Qubit[], Qubit[]) => Unit) : BigInt {
     use a = Qubit[n];
     use b = Qubit[n];
     ApplyBigInt(a_val, a);

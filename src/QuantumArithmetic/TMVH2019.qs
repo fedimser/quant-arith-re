@@ -88,4 +88,18 @@ operation Divide_NonRestoring(a : Qubit[], b : Qubit[], c : Qubit[], cfg : Confi
     X(Q[0]);
 }
 
-export Divide_Restoring, Divide_NonRestoring;
+/// Computes (a; b; c) := (a%b; b, a/b).
+/// Register sizes must be (n, n-1, n). c must be prepared in zero state.
+/// Default divider, recommended for general-purpose usage.
+/// Interface changed from the paper, to make usage more convenient.
+/// Any input value of a and b is valid.
+operation Divide(a : Qubit[], b : Qubit[], c : Qubit[]) : Unit is Adj + Ctl {
+    let config = new Config { Adder = Std.Arithmetic.RippleCarryCGIncByLE };
+    let n = Length(a);
+    Fact(Length(b) == n-1, "Registers sizes are incompatible.");
+    Fact(Length(c) == n, "Registers sizes are incompatible.");
+    Divide_NonRestoring(a, b + [c[0]], c[1..n-1], config);
+    SWAP(a[n-1], c[0]);
+}
+
+export Divide_Restoring, Divide_NonRestoring, Divide;

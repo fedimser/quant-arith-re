@@ -65,6 +65,25 @@ operation BinaryOpInPlace(n : Int, x_val : BigInt, y_val : BigInt, op : (Qubit[]
     return ans;
 }
 
+// Tests arbitrary operation acting on 2 registers.
+// Applies `op` on two registers of sizes nx, ny, populated with x,y.
+// Returns new values of the registers.
+operation BinaryOpArb(
+    nx : Int,
+    ny : Int,
+    x : BigInt,
+    y : BigInt,
+    op : (Qubit[], Qubit[]) => Unit
+) : (BigInt, BigInt) {
+    use X = Qubit[nx];
+    use Y = Qubit[ny];
+    ApplyBigInt(x, X);
+    ApplyBigInt(y, Y);
+    op(X, Y);
+    return (MeasureBigInt(X), MeasureBigInt(Y));
+}
+
+
 // Tests arbitrary operation acting on 3 registers.
 // Applies `op` on three registers of sizes nx, ny, nz, populated with x,y,z.
 // Returns new values of the registers.

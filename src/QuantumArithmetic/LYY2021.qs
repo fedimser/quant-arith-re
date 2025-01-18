@@ -8,6 +8,7 @@ import Std.Arithmetic.IncByLUsingIncByLE;
 import Std.Diagnostics.Fact;
 import Std.Math;
 import QuantumArithmetic.CDKM2004;
+import QuantumArithmetic.TableFunctions.TableLookup;
 import QuantumArithmetic.Utils;
 
 
@@ -178,51 +179,6 @@ operation ModExp(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is A
         Controlled ModMulByConstFast([x[i]], (Ans, Anc, a_sqs[i], N));
         Controlled Utils.ParallelSWAP([x[i]], (Ans, Anc));
         Adjoint Controlled ModMulByConstFast([x[i]], (Ans, Anc, a_inv_sqs[i], N));
-    }
-}
-
-/// Controlled table lookup.
-operation TableLookupCtl(control : Qubit, input : Qubit[], target : Qubit[], table : BigInt[]) : Unit is Adj {
-    let m = Length(input);
-    let tn = Length(table);
-    Fact(tn == 1 <<< m, "Table size must be 2^m.");
-
-    if (m == 0) {
-        Controlled ApplyXorInPlaceL([control], (table[0], target));
-    } else {
-        use anc = Qubit();
-        X(input[m-1]);
-        within {
-            AND(control, input[m-1], anc);
-        } apply {
-            X(input[m-1]);
-            TableLookupCtl(anc, input[0..m-2], target, table[0..tn / 2-1]);
-            CNOT(control, anc);
-            TableLookupCtl(anc, input[0..m-2], target, table[tn / 2..tn-1]);
-        }
-
-    }
-}
-
-/// Assigns target ⊕= table[input].
-/// Figure 13 in the paper.
-/// Originally idea comes from https://arxiv.org/abs/1805.03662.
-operation TableLookup(input : Qubit[], target : Qubit[], table : BigInt[]) : Unit is Adj + Ctl {
-    body (...) {
-        let m = Length(input);
-        let tn = Length(table);
-        X(input[m-1]);
-        TableLookupCtl(input[m-1], input[0..m-2], target, table[0..tn / 2-1]);
-        X(input[m-1]);
-        TableLookupCtl(input[m-1], input[0..m-2], target, table[tn / 2..tn-1]);
-    }
-    controlled (controls, ...) {
-        if (Length(controls) == 0) {
-            TableLookup(input, target, table);
-        } else {
-            Fact(Length(controls) <= 1, "Only up to 1 control is supported.");
-            TableLookupCtl(controls[0], input, target, table);
-        }
     }
 }
 

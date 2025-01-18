@@ -2,6 +2,7 @@
     "license": "MIT",
     "files": [
       "src/QuantumArithmetic/AdditionStd.qs",
+      "src/QuantumArithmetic/TableFunctions.qs",
       "src/QuantumArithmetic/CG2019.qs",
       "src/QuantumArithmetic/CG20192.qs",
       "src/QuantumArithmetic/ConstAdder.qs",
@@ -13,7 +14,6 @@
       "src/QuantumArithmetic/JHHA2016.qs",
       "src/QuantumArithmetic/LYTZW2013.qs",
       "src/QuantumArithmetic/LYY2021.qs",
-      "src/QuantumArithmetic/LYY2021Test.qs",
       "src/QuantumArithmetic/MCT2017.qs",
       "src/QuantumArithmetic/MCT2018.qs",
       "src/QuantumArithmetic/MSIM2013.qs",

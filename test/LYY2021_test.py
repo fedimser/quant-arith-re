@@ -77,16 +77,6 @@ def test_ModExp(op: str, n: int):
     assert ans == test_utils.pow_mod(a, x, N)
 
 
-@pytest.mark.parametrize("m", [1, 2, 3, 4, 5])
-def test_TableLookup(m: int):
-    n = 8
-    table = [random.randint(0, 2**n-1) for _ in range(2**m)]
-    table_str = "["+",".join(f"{x}L" for x in table) + "]"
-    ans = eval(
-        f"QuantumArithmetic.LYY2021Test.TestTableLookup({n},{m},{table_str})")
-    assert ans == table
-
-
 @pytest.mark.parametrize("n", [2, 3, 4, 5, 6, 8, 11, 16])
 def test_ModMulMontgomery(n: int):
     op = "QuantumArithmetic.LYY2021.ModMulMontgomery"

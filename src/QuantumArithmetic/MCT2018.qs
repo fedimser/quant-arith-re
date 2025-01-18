@@ -1,8 +1,6 @@
-import QuantumArithmetic.GKDKH2021.QuantumFullAdder;
-import QuantumArithmetic.Utils.SWAPViaRelabel;
 /// Square Root algorithm, presented in the paper:
 ///   T-count and Qubit Optimized Quantum Circuit Design of the Non-Restoring Square Root Algorithm
-///   Edgard Muñoz-Coreas, Himanshu Thapliyal, 2017.
+///   Edgard Muñoz-Coreas, Himanshu Thapliyal, 2018.
 ///   https://arxiv.org/abs/1712.08254
 /// All numbers are unsigned integers, little-endian.
 import Std.Diagnostics.Fact;

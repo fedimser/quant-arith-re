@@ -19,15 +19,6 @@ def test_AddConstant():
         assert ans == (x+y) % (2**n)
 
 
-def test_LeftShift():
-    n = 16
-    for _ in range(5):
-        x = random.randint(0, 2**(n-1)-1)
-        op = f"QuantumArithmetic.LYY2021.LeftShift"
-        ans = eval(f"TestUtils.UnaryOpInPlaceCtl({n},{x}L,{op})")
-        assert ans == x * 2
-
-
 @pytest.mark.parametrize("n", [2, 3, 5, 10])
 def test_ModAdd(n: int):
     n = 16

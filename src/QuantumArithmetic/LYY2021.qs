@@ -72,21 +72,6 @@ operation CompareByConst(A : BigInt, B : Qubit[], Ans : Qubit) : Unit is Adj + C
     }
 }
 
-/// Computes B:=2*B, when the highest bit is known to be 0.
-/// Figure 10 in the paper.
-operation LeftShift(B : Qubit[]) : Unit is Adj + Ctl {
-    let n = Length(B);
-    for i in n-2..-1..0 {
-        CNOT(B[i], B[i + 1]);
-        CNOT(B[i + 1], B[i]);
-    }
-}
-
-/// Computes B:=B/2, when the lowest bit is known to be 0.
-operation RightShift(B : Qubit[]) : Unit is Adj + Ctl {
-    Adjoint LeftShift(B);
-}
-
 /// Computes B:=(A+B)%N.
 /// Must be 0 <= A,B < N < 2^N.
 /// Figures 8 and 9 in the paper.
@@ -121,7 +106,7 @@ operation ModDbl(A : Qubit[], N : BigInt) : Unit is Adj + Ctl {
     Fact(N < (1L <<< n), "N is too large.");
     use Anc = Qubit[n + 2];
 
-    LeftShift(A + [Anc[n]]);
+    Utils.RotateLeft(A + [Anc[n]]);
     CompareByConst(N, A + [Anc[n]], Anc[n + 1]);
     X(Anc[n + 1]);
     within {
@@ -311,7 +296,7 @@ operation ForwardMontgomery(x : Qubit[], y : Qubit[], Ans : Qubit[], Anc : Qubit
         }
         CNOT(Ans[0], Anc[i + 1]);
         Controlled AddConstant([Anc[i + 1]], (N, Ans + [Anc[0]]));
-        RightShift(Ans + [Anc[0]]);
+        Utils.RotateRight(Ans + [Anc[0]]);
     }
     CompareByConst(N, Ans + [Anc[0]], Anc[n2 + 1]);
     X(Anc[n2 + 1]);

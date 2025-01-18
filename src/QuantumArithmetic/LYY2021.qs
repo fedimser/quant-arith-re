@@ -1,5 +1,3 @@
-import QuantumArithmetic.Utils.ParallelCNOT;
-import QuantumArithmetic.Utils.Rearrange2D;
 /// Implementation of operations presented in paper:
 ///   CNOT-count optimized quantum circuit of the Shor’s algorithm
 ///   Xia Liu, Huan Yang, Li Yang, 2021.
@@ -9,9 +7,7 @@ import QuantumArithmetic.Utils.Rearrange2D;
 import Std.Arithmetic.IncByLUsingIncByLE;
 import Std.Diagnostics.Fact;
 import Std.Math;
-
 import QuantumArithmetic.CDKM2004;
-import QuantumArithmetic.AdditionOrig;
 import QuantumArithmetic.Utils;
 
 
@@ -273,9 +269,9 @@ operation ModExpWindowed(
     let a_sqs = Utils.ComputeSequentialSquares(a, N, n1);
     let window_count = Utils.DivCeil(n1, window_size);
     use Anc1 = Qubit[window_count * n2];
-    let y : Qubit[][] = Rearrange2D(Anc1, window_count, n2);  // Intermediary results.
+    let y : Qubit[][] = Utils.Rearrange2D(Anc1, window_count, n2);  // Intermediary results.
     use Anc2 = Qubit[window_count * n2];
-    let lkp : Qubit[][] = Rearrange2D(Anc2, window_count, n2); // Looked up values.
+    let lkp : Qubit[][] = Utils.Rearrange2D(Anc2, window_count, n2); // Looked up values.
     within {
         X(y[0][0]);  // y[0] := 1.
         for i in 0..window_count-2 {
@@ -309,7 +305,7 @@ operation ForwardMontgomery(x : Qubit[], y : Qubit[], Ans : Qubit[], Anc : Qubit
 
     for i in 0..n1-1 {
         if (i == 0) {
-            Controlled ParallelCNOT([x[0]], (y, Ans));
+            Controlled Utils.ParallelCNOT([x[0]], (y, Ans));
         } else {
             Controlled CDKM2004.AddWithCarry([x[i]], (y, Ans, Anc[0]));
         }
@@ -339,7 +335,7 @@ operation ModMulMontgomery(x : Qubit[], y : Qubit[], Ans : Qubit[], N : BigInt) 
         within {
             ForwardMontgomery(x, y + [y_pad], TmpAns, Anc, N);
         } apply {
-            ParallelCNOT(TmpAns[0..n2-1], Ans);
+            Utils.ParallelCNOT(TmpAns[0..n2-1], Ans);
         }
     } else {
         use TmpAns = Qubit[n2];
@@ -347,7 +343,7 @@ operation ModMulMontgomery(x : Qubit[], y : Qubit[], Ans : Qubit[], N : BigInt) 
         within {
             ForwardMontgomery(x, y, TmpAns, Anc, N);
         } apply {
-            ParallelCNOT(TmpAns, Ans);
+            Utils.ParallelCNOT(TmpAns, Ans);
         }
     }
 }
@@ -368,9 +364,9 @@ operation ModExpWindowedMontgomery(
     let a_sqs = Utils.ComputeSequentialSquares(a, N, n1);
     let window_count = Utils.DivCeil(n1, window_size);
     use Anc1 = Qubit[window_count * n2];
-    let y : Qubit[][] = Rearrange2D(Anc1, window_count, n2);  // Intermediary results.
+    let y : Qubit[][] = Utils.Rearrange2D(Anc1, window_count, n2);  // Intermediary results.
     use Anc2 = Qubit[window_count * n2];
-    let lkp : Qubit[][] = Rearrange2D(Anc2, window_count, n2); // Looked up values.
+    let lkp : Qubit[][] = Utils.Rearrange2D(Anc2, window_count, n2); // Looked up values.
     within {
         X(y[0][0]);  // y[0] := 1.
         for i in 0..window_count-2 {

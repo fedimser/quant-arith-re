@@ -1,7 +1,6 @@
 {
     "license": "MIT",
     "files": [
-      "src/QuantumArithmetic/AdditionOrig.qs",
       "src/QuantumArithmetic/AdditionStd.qs",
       "src/QuantumArithmetic/CG2019.qs",
       "src/QuantumArithmetic/CG20192.qs",

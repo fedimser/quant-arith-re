@@ -64,3 +64,5 @@ operation GreatestCommonDivisor(A : Qubit[], B : Qubit[], Ans : Qubit[]) : Unit 
         }
     }
 }
+
+export GreatestCommonDivisor;

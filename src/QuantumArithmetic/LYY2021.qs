@@ -1,5 +1,3 @@
-import QuantumArithmetic.Utils.ParallelCNOT;
-import QuantumArithmetic.Utils.Rearrange2D;
 /// Implementation of operations presented in paper:
 ///   CNOT-count optimized quantum circuit of the Shor’s algorithm
 ///   Xia Liu, Huan Yang, Li Yang, 2021.
@@ -9,9 +7,8 @@ import QuantumArithmetic.Utils.Rearrange2D;
 import Std.Arithmetic.IncByLUsingIncByLE;
 import Std.Diagnostics.Fact;
 import Std.Math;
-
 import QuantumArithmetic.CDKM2004;
-import QuantumArithmetic.AdditionOrig;
+import QuantumArithmetic.TableFunctions.TableLookup;
 import QuantumArithmetic.Utils;
 
 
@@ -76,21 +73,6 @@ operation CompareByConst(A : BigInt, B : Qubit[], Ans : Qubit) : Unit is Adj + C
     }
 }
 
-/// Computes B:=2*B, when the highest bit is known to be 0.
-/// Figure 10 in the paper.
-operation LeftShift(B : Qubit[]) : Unit is Adj + Ctl {
-    let n = Length(B);
-    for i in n-2..-1..0 {
-        CNOT(B[i], B[i + 1]);
-        CNOT(B[i + 1], B[i]);
-    }
-}
-
-/// Computes B:=B/2, when the lowest bit is known to be 0.
-operation RightShift(B : Qubit[]) : Unit is Adj + Ctl {
-    Adjoint LeftShift(B);
-}
-
 /// Computes B:=(A+B)%N.
 /// Must be 0 <= A,B < N < 2^N.
 /// Figures 8 and 9 in the paper.
@@ -125,7 +107,7 @@ operation ModDbl(A : Qubit[], N : BigInt) : Unit is Adj + Ctl {
     Fact(N < (1L <<< n), "N is too large.");
     use Anc = Qubit[n + 2];
 
-    LeftShift(A + [Anc[n]]);
+    Utils.RotateLeft(A + [Anc[n]]);
     CompareByConst(N, A + [Anc[n]], Anc[n + 1]);
     X(Anc[n + 1]);
     within {
@@ -200,51 +182,6 @@ operation ModExp(x : Qubit[], Ans : Qubit[], a : BigInt, N : BigInt) : Unit is A
     }
 }
 
-/// Controlled table lookup.
-operation TableLookupCtl(control : Qubit, input : Qubit[], target : Qubit[], table : BigInt[]) : Unit is Adj {
-    let m = Length(input);
-    let tn = Length(table);
-    Fact(tn == 1 <<< m, "Table size must be 2^m.");
-
-    if (m == 0) {
-        Controlled ApplyXorInPlaceL([control], (table[0], target));
-    } else {
-        use anc = Qubit();
-        X(input[m-1]);
-        within {
-            AND(control, input[m-1], anc);
-        } apply {
-            X(input[m-1]);
-            TableLookupCtl(anc, input[0..m-2], target, table[0..tn / 2-1]);
-            CNOT(control, anc);
-            TableLookupCtl(anc, input[0..m-2], target, table[tn / 2..tn-1]);
-        }
-
-    }
-}
-
-/// Assigns target ⊕= table[input].
-/// Figure 13 in the paper.
-/// Originally idea comes from https://arxiv.org/abs/1805.03662.
-operation TableLookup(input : Qubit[], target : Qubit[], table : BigInt[]) : Unit is Adj + Ctl {
-    body (...) {
-        let m = Length(input);
-        let tn = Length(table);
-        X(input[m-1]);
-        TableLookupCtl(input[m-1], input[0..m-2], target, table[0..tn / 2-1]);
-        X(input[m-1]);
-        TableLookupCtl(input[m-1], input[0..m-2], target, table[tn / 2..tn-1]);
-    }
-    controlled (controls, ...) {
-        if (Length(controls) == 0) {
-            TableLookup(input, target, table);
-        } else {
-            Fact(Length(controls) <= 1, "Only up to 1 control is supported.");
-            TableLookupCtl(controls[0], input, target, table);
-        }
-    }
-}
-
 function MakeLookupTable(a : BigInt[], N : BigInt) : BigInt[] {
     let m = Length(a);
     if (m == 1) {
@@ -273,9 +210,9 @@ operation ModExpWindowed(
     let a_sqs = Utils.ComputeSequentialSquares(a, N, n1);
     let window_count = Utils.DivCeil(n1, window_size);
     use Anc1 = Qubit[window_count * n2];
-    let y : Qubit[][] = Rearrange2D(Anc1, window_count, n2);  // Intermediary results.
+    let y : Qubit[][] = Utils.Rearrange2D(Anc1, window_count, n2);  // Intermediary results.
     use Anc2 = Qubit[window_count * n2];
-    let lkp : Qubit[][] = Rearrange2D(Anc2, window_count, n2); // Looked up values.
+    let lkp : Qubit[][] = Utils.Rearrange2D(Anc2, window_count, n2); // Looked up values.
     within {
         X(y[0][0]);  // y[0] := 1.
         for i in 0..window_count-2 {
@@ -309,13 +246,13 @@ operation ForwardMontgomery(x : Qubit[], y : Qubit[], Ans : Qubit[], Anc : Qubit
 
     for i in 0..n1-1 {
         if (i == 0) {
-            Controlled ParallelCNOT([x[0]], (y, Ans));
+            Controlled Utils.ParallelCNOT([x[0]], (y, Ans));
         } else {
             Controlled CDKM2004.AddWithCarry([x[i]], (y, Ans, Anc[0]));
         }
         CNOT(Ans[0], Anc[i + 1]);
         Controlled AddConstant([Anc[i + 1]], (N, Ans + [Anc[0]]));
-        RightShift(Ans + [Anc[0]]);
+        Utils.RotateRight(Ans + [Anc[0]]);
     }
     CompareByConst(N, Ans + [Anc[0]], Anc[n2 + 1]);
     X(Anc[n2 + 1]);
@@ -339,7 +276,7 @@ operation ModMulMontgomery(x : Qubit[], y : Qubit[], Ans : Qubit[], N : BigInt) 
         within {
             ForwardMontgomery(x, y + [y_pad], TmpAns, Anc, N);
         } apply {
-            ParallelCNOT(TmpAns[0..n2-1], Ans);
+            Utils.ParallelCNOT(TmpAns[0..n2-1], Ans);
         }
     } else {
         use TmpAns = Qubit[n2];
@@ -347,7 +284,7 @@ operation ModMulMontgomery(x : Qubit[], y : Qubit[], Ans : Qubit[], N : BigInt) 
         within {
             ForwardMontgomery(x, y, TmpAns, Anc, N);
         } apply {
-            ParallelCNOT(TmpAns, Ans);
+            Utils.ParallelCNOT(TmpAns, Ans);
         }
     }
 }
@@ -368,9 +305,9 @@ operation ModExpWindowedMontgomery(
     let a_sqs = Utils.ComputeSequentialSquares(a, N, n1);
     let window_count = Utils.DivCeil(n1, window_size);
     use Anc1 = Qubit[window_count * n2];
-    let y : Qubit[][] = Rearrange2D(Anc1, window_count, n2);  // Intermediary results.
+    let y : Qubit[][] = Utils.Rearrange2D(Anc1, window_count, n2);  // Intermediary results.
     use Anc2 = Qubit[window_count * n2];
-    let lkp : Qubit[][] = Rearrange2D(Anc2, window_count, n2); // Looked up values.
+    let lkp : Qubit[][] = Utils.Rearrange2D(Anc2, window_count, n2); // Looked up values.
     within {
         X(y[0][0]);  // y[0] := 1.
         for i in 0..window_count-2 {

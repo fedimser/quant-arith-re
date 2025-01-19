@@ -19,15 +19,6 @@ def test_AddConstant():
         assert ans == (x+y) % (2**n)
 
 
-def test_LeftShift():
-    n = 16
-    for _ in range(5):
-        x = random.randint(0, 2**(n-1)-1)
-        op = f"QuantumArithmetic.LYY2021.LeftShift"
-        ans = eval(f"TestUtils.UnaryOpInPlaceCtl({n},{x}L,{op})")
-        assert ans == x * 2
-
-
 @pytest.mark.parametrize("n", [2, 3, 5, 10])
 def test_ModAdd(n: int):
     n = 16
@@ -84,16 +75,6 @@ def test_ModExp(op: str, n: int):
     x = random.randint(0, 2**n-1)
     ans = eval(f"TestUtils.TestModExp({n},{a}L,{x}L,{N}L,{op})")
     assert ans == test_utils.pow_mod(a, x, N)
-
-
-@pytest.mark.parametrize("m", [1, 2, 3, 4, 5])
-def test_TableLookup(m: int):
-    n = 8
-    table = [random.randint(0, 2**n-1) for _ in range(2**m)]
-    table_str = "["+",".join(f"{x}L" for x in table) + "]"
-    ans = eval(
-        f"QuantumArithmetic.LYY2021Test.TestTableLookup({n},{m},{table_str})")
-    assert ans == table
 
 
 @pytest.mark.parametrize("n", [2, 3, 4, 5, 6, 8, 11, 16])

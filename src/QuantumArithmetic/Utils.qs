@@ -99,6 +99,30 @@ operation ApplyPermutation(qubits : Qubit[], P : Int[]) : Unit is Adj {
     Relabel(qubits, Std.Arrays.Mapped(i -> qubits[i], P));
 }
 
+/// Rotates qubits of P right by 1.
+operation RotateRight(P : Qubit[]) : Unit is Adj + Ctl {
+    let k : Int = Length(P);
+    let k1 : Int = k / 2;
+    for i in 0..k1-1 {
+        SWAP(P[i], P[k-1-i]);
+    }
+    for i in 0..k1-2 + (k % 2) {
+        SWAP(P[i], P[k-2-i]);
+    }
+}
+
+/// Rotates qubits of P left by 1.
+operation RotateLeft(P : Qubit[]) : Unit is Adj + Ctl {
+    Adjoint RotateRight(P);
+}
+
+/// Computes ys -= xs.
+operation Subtract(xs : Qubit[], ys : Qubit[]) : Unit is Adj + Ctl {
+    ParallelX(ys);
+    Std.Arithmetic.RippleCarryTTKIncByLE(xs, ys);
+    ParallelX(ys);
+}
+
 /// Rearranges qubits into n1xn2 2-dimensional array.
 function Rearrange2D(q : Qubit[], n1 : Int, n2 : Int) : Qubit[][] {
     Fact(Length(q) == n1 * n2, "Size mismatch in Rearrange2D.");
@@ -127,3 +151,5 @@ function ComputeSequentialSquares(a : BigInt, N : BigInt, n : Int) : BigInt[] {
     }
     return ans;
 }
+
+export RotateRight, RotateLeft, Subtract;

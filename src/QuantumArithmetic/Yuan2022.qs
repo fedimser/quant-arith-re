@@ -1,7 +1,5 @@
-import Std.Diagnostics.DumpRegister;
 /// Implementation of a restoring division algorithms presented in the paper:
-///   Quantum Division Circuit Based on Restoring Division Algorithm, https://ieeexplore.ieee.org/document/5945378/
-
+/// A novel fault-tolerant quantum divider and its simulation, https://ieeexplore.ieee.org/document/5945378/
 import Std.Diagnostics.Fact;
 import QuantumArithmetic.Xin2018.CompareLess;
 import QuantumArithmetic.TMVH2019.Subtract;
@@ -9,10 +7,10 @@ import QuantumArithmetic.TMVH2019.Subtract;
 operation Subtract_NotEqualBit(x : Qubit[], y : Qubit[]) : Unit is Adj + Ctl {
     let n = Length(y);
     let m = Length(x);
-    // add qubits in front of b
-    use s = Qubit[n-m];
-    let b = x + s;
-    Subtract_EqualBit(b, y);
+    // add 1 qubit in front of b for carry
+    use s = Qubit();
+    let b = x + [s];
+    Subtract_EqualBit(b, y[0..m]);
 }
 
 //  Computes ys -= xs
@@ -30,30 +28,27 @@ operation Subtract_EqualBit(x : Qubit[], y : Qubit[]) : Unit is Adj + Ctl {
 ///  * c must be initialized to zeros.
 operation Divide(D : Qubit[], Q : Qubit[], S: Qubit[]) : Unit {
     let n = Length(D);
-    let m = Length(Q);
-    let s_len = Length(S); // problem here
+    let m = Length(Q); 
+    let s_len = Length(S);
     Fact(n-m+1 == s_len, "Quotient sizes must match.");
-
-    use compare_result = Qubit[n-m+1];
-    use acc = Qubit[n-m+1];
+    use compare_result = Qubit();
+    use acc  =  Qubit();
     for i in 0..n-m {
-        CompareLess(D[n-m-i..n-1-i], Q[0..m-1], compare_result[i]);
-        DumpRegister(D[n-m-i..n-1-i]);
-        DumpRegister(Q[0..m-1]);
-        DumpRegister([compare_result[i]]);
-        X(compare_result[i]);
-        CNOT(compare_result[i], S[n-m-i]);
-        Controlled Subtract_EqualBit([compare_result[i]], (Q[0..m-1],D[n-m-i..n-1-i]));
-        X(compare_result[i]);
+        CompareLess(D[n-m-i..n-1-i ] , Q[0..m-1], compare_result);
+        // if compare_r e sult = 0, D >= Q, compute D = D[n-1-i...n-m-i] - Q[m-1...0] + D[n-m-1...0]
+        X(compare_result);
+        CNOT(compare_result, S[n-m-i]);
+        Controlled Subtract_EqualBit([compare_result], (Q[0..m-1],D[n-m-i..n-1-i]));
+        X(compare_result);
+        // if compare_result = 1, D < Q, D = D[n-1-i...n-m-i] + D[n-m-1...0]
+        // if D[n-1-i] = 0, the highest bit of this mindend is 0, no need to subtract
         if (i != n-m) {
-            CNOT(D[n-1-i], S[n-m-i-1]);
-            // CCNOT(compare_result[i], D[n-1-i], S[n-m-i-1]);
-            CCNOT(compare_result[i], D[n-1-i], acc[i]);
-            // DumpRegister([S[n-m-i-1]]);
-            Controlled Subtract_NotEqualBit([acc[i]], (Q[0..m-1], D[n-m-i-1..n-1-i]));
+            CNOT(D[n-1-i], S[n-m-i-1]); 
+            CCNOT(compare_result, D[n-1-i], acc);
+            Controlled Subtract_NotEqualBit([acc], (Q[0..m-1], D[n-m-i-1..n-1-i]));
+            CCNOT(compare_result, S[n-m-i-1], acc); // the paper use reset
         }
-        Reset(compare_result[i]);
-        Reset(acc[i]);
+        Reset(compare_result);
     }
 }
 export Divide;

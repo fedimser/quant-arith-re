@@ -239,17 +239,19 @@ operation TestCompare(n : Int, a_val : BigInt, b_val : BigInt, op : (Qubit[], Qu
     return MResetZ(ans) == One; 
 }
 
-operation Test_Subtract_NotEqualBit(n : Int, a_val : BigInt, m : Int, b_val : BigInt, op : (Qubit[], Qubit[], Qubit, Qubit) => Unit) : BigInt {
+operation Test_Subtract_NotEqualBit(n : Int, a_val : BigInt, m : Int, b_val : BigInt, c_val: Int, op : (Qubit[], Qubit[], Qubit, Qubit) => Unit) : BigInt {
     use a = Qubit[n];
     use b = Qubit[m];
     use s2 = Qubit();
     use ctr = Qubit();
-    X(ctr);
+    if (c_val == 1) {
+        X(ctr);
+    }
     ApplyBigInt(a_val, a);
     ApplyBigInt(b_val, b);
     op(a, b, s2, ctr);
     Fact(MeasureBigInt(a) == a_val, "a was changed.");
-    Fact(MeasureBigInt([ctr]) == 1L, "ctr was changed.");
+    Fact(MeasureInteger([ctr]) == c_val, "Control qubit was changed.");
     return MeasureBigInt(b + [s2]);
 }
 
@@ -260,5 +262,30 @@ operation Test_Subtract_Minuend(n : Int, a_val : BigInt, b_val: BigInt, op : (Qu
     ApplyBigInt(b_val, b);
     op(a, b);
     Fact(MeasureBigInt(a) == a_val, "a was changed.");
+    return MeasureBigInt(b);
+}
+
+operation Test_Subtract_Minuend_Unequal(n : Int, a_val : BigInt, m : Int, b_val: BigInt, op : (Qubit[], Qubit[]) => Unit) : BigInt {
+    use a = Qubit[n];
+    use b = Qubit[m];
+    ApplyBigInt(a_val, a);
+    ApplyBigInt(b_val, b);
+    op(a, b);
+    Fact(MeasureBigInt(a) == a_val, "a was changed.");
+    return MeasureBigInt(b);
+}
+
+operation Test_Subtract(n : Int, a_val : BigInt, b_val: BigInt, c_val: Int, op : (Qubit[], Qubit[], Qubit) => Unit) : BigInt {
+    use a = Qubit[n];
+    use b = Qubit[n];
+    use ctr = Qubit();
+    if (c_val == 1) {
+        X(ctr);
+    }
+    ApplyBigInt(a_val, a);
+    ApplyBigInt(b_val, b);
+    op(a, b, ctr);
+    Fact(MeasureBigInt(a) == a_val, "a was changed.");
+    Fact(MeasureInteger([ctr]) == c_val, "Control qubit was changed.");
     return MeasureBigInt(b);
 }

@@ -4,9 +4,10 @@ import os
 import time
 import numpy as np
 from matplotlib import pyplot as plt
+import re
 
 METRICS = ["Logical qubits", "Physical qubits",
-           "Logical depth", "Runtime, seconds"]
+           "Logical depth", "Runtime (seconds)"]
 METRICS_TO_PLOT = [1, 3]
 DEFAULT_N_RANGE = [3] + [int(round(2**(0.25*i))) for i in range(8, 81)]
 DEBUG = False
@@ -51,6 +52,7 @@ def run_re_experiments(ops_and_max_n, estimate_func,
         aliases[op] = alias
         n_ranges[op] = [n for n in DEFAULT_N_RANGE if n <= max_n]
     charts = [{op: [] for op in ops} for _ in range(len(METRICS_TO_PLOT))]
+    plt.rcParams["font.family"] = "serif"
 
     # Run experiments.
     for n in DEFAULT_N_RANGE:
@@ -82,7 +84,7 @@ def run_re_experiments(ops_and_max_n, estimate_func,
         ax[i].set_ylabel(METRICS[METRICS_TO_PLOT[i]])
         ax[i].set_xscale('log')
         ax[i].set_yscale('log')
-        ax[i].grid()
+        ax[i].grid(linestyle='--', alpha=0.5)
     ax[0].legend()
 
     # Custom title,
@@ -94,7 +96,8 @@ def run_re_experiments(ops_and_max_n, estimate_func,
                 horizontalalignment='center',
                 transform=ax[1].transAxes)
 
-    fig_name = 'img/%s.png' % title.replace(' ', '_').lower()
+    fig_name = re.sub(r'\W+', ' ', title.lower()).strip().replace(' ', '_')
+    fig_name = f'img/{fig_name}.png'
     fig.savefig(fig_name, format='png',
                 dpi=300, bbox_inches='tight')
     print(f'Charts saved to {fig_name}')

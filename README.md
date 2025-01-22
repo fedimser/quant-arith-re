@@ -10,7 +10,7 @@ experiments on their resource estimation. It was created as a project in
   * `resource_estimate` - experiments on resource estimation of some algorithms, using the [Azure Quantum Resource Estimator](https://learn.microsoft.com/en-us/azure/quantum/intro-to-resource-estimation).
   * `resource_estimate/results` - raw results of experiments, in CSV format.
 
-This repository is designed to be used as a [Q# library](https://learn.microsoft.com/en-us/azure/quantum/how-to-work-with-qsharp-projects?tabs=tabid-qsharp%2Ctabid-qsharp-run).
+This repository is designed to be used as a [Q# library](https://github.com/microsoft/qsharp/wiki/Q%23-External-Dependencies-(Libraries)).
 
 ## Algorithms
 

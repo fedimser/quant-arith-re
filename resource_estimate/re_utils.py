@@ -41,9 +41,7 @@ def run_re_with_caching(estimate_func, op, n) -> list:
         return metrics
 
 
-def run_re_experiments(ops_and_max_n, estimate_func,
-                       title=None,
-                       special_markers: dict[str, str] = {}):
+def run_re_experiments(ops_and_max_n, estimate_func, title=None):
     title = title or estimate_func.__name__
     ops = [op for op, _, _ in ops_and_max_n]
     n_ranges = {}
@@ -66,11 +64,6 @@ def run_re_experiments(ops_and_max_n, estimate_func,
     min_n = min(DEFAULT_N_RANGE)
     max_n = max(n for _, _, n in ops_and_max_n)
 
-    # Prepare markers.
-    markers = {op: '.' for op in ops}
-    for op, marker in special_markers.items():
-        markers[op] = marker
-
     # Show charts.
     fig, ax = plt.subplots(figsize=(7, 6.5), nrows=len(METRICS_TO_PLOT),
                            ncols=1, sharex=True)
@@ -78,7 +71,7 @@ def run_re_experiments(ops_and_max_n, estimate_func,
     for i in range(len(METRICS_TO_PLOT)):
         for op in n_ranges.keys():
             ax[i].plot(n_ranges[op], charts[i][op],
-                       label=aliases[op], marker=markers[op], linewidth=0.8)
+                       label=aliases[op])
         ax[i].set_xlim([min_n, max_n])
         # ax[i].set_xlabel('Input size')
         ax[i].set_ylabel(METRICS[METRICS_TO_PLOT[i]])

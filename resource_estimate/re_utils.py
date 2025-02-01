@@ -5,12 +5,17 @@ import time
 import numpy as np
 from matplotlib import pyplot as plt
 import re
+import math
 
 METRICS = ["Logical qubits", "Physical qubits",
            "Logical depth", "Runtime (seconds)"]
 METRICS_TO_PLOT = [1, 3]
 DEFAULT_N_RANGE = [3] + [int(round(2**(0.25*i))) for i in range(8, 81)]
 DEBUG = False
+
+
+def _log2(x):
+    return int(round(math.log2(x)))
 
 
 def run_re_with_caching(estimate_func, op, n) -> list:
@@ -88,6 +93,11 @@ def run_re_experiments(ops_and_max_n, estimate_func, title=None):
     ax[-1].text(.5, .04, 'Input size (n)',
                 horizontalalignment='center',
                 transform=ax[1].transAxes)
+
+    # Custom binary ticks.
+    ax[-1].xaxis.set_ticks([2**i for i in range(2, 100) if 2**i <= max_n])
+    ax[-1].xaxis.set_major_formatter(lambda x, pos: "$2^{%d}$" % _log2(x))
+    ax[-1].minorticks_off()
 
     fig_name = re.sub(r'\W+', ' ', title.lower()).strip().replace(' ', '_')
     fig_name = f'img/{fig_name}.png'

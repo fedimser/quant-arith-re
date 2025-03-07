@@ -5,7 +5,7 @@ import math
 
 @pytest.fixture(scope="session", autouse=True)
 def setup():
-    init(project_root='.')
+    init(project_root="./lib/")
 
 
 @pytest.mark.parametrize("n1,n2", [(2, 3), (3, 13), (4, 41)])

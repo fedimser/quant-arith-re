@@ -6,7 +6,7 @@ import math
 
 @pytest.fixture(scope="session", autouse=True)
 def setup():
-    init(project_root='.')
+    init(project_root="./lib/")
 
 
 @pytest.mark.parametrize("n", [1, 2, 3, 4, 5, 6, 7, 8])

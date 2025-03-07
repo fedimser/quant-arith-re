@@ -5,7 +5,7 @@ import random
 
 @pytest.fixture(scope="session", autouse=True)
 def setup():
-    init(project_root='.')
+    init(project_root="./lib/")
 
 
 @pytest.mark.parametrize("n", [1, 2, 3, 4, 5, 8, 16, 31, 32, 63])

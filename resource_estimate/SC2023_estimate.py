@@ -1,7 +1,7 @@
 import qsharp
 import random, json
 
-qsharp.init(project_root = '.')
+qsharp.init(project_root="../lib/")
 
 op = "QuantumArithmetic.SC2023.Add"
 results = []

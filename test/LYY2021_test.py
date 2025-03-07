@@ -7,7 +7,7 @@ import test_utils
 
 @pytest.fixture(scope="session", autouse=True)
 def setup():
-    init(project_root='.')
+    init(project_root="./lib/")
 
 
 def test_AddConstant():

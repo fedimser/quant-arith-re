@@ -5,7 +5,7 @@ import random
 
 @pytest.fixture(scope="session", autouse=True)
 def setup():
-    init(project_root=".")
+    init(project_root="./lib/")
 
 @pytest.mark.parametrize("n", [3, 4, 7, 8, 9, 11, 12])
 def test_subtract_equal(n: int):

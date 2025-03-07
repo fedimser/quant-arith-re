@@ -5,7 +5,7 @@ experiments on their resource estimation. It was created as a project in
 [Quantum Open Source Foundation](https://qosf.org) Mentorship Program (cohort 10).
 
 ## Repository structure
-  * `src` - implementation of various algorithms in Q#. Each file corresponds to a research paper, which implementing one or more algorithms. Typicaly, a file name consists of author's initials and year when the paper was published. Each such file has a reference to the paper it implements.
+  * `lib/src` - implementation of various algorithms in Q#. Each file corresponds to a research paper, which implementing one or more algorithms. Typicaly, a file name consists of author's initials and year when the paper was published. Each such file has a reference to the paper it implements.
   * `test` - tests using Q# simulator (written in Python, using `qsharp` Python library).
   * `resource_estimate` - experiments on resource estimation of some algorithms, using the [Azure Quantum Resource Estimator](https://learn.microsoft.com/en-us/azure/quantum/intro-to-resource-estimation).
   * `resource_estimate/results` - raw results of experiments, in CSV format.

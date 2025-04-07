@@ -29,3 +29,10 @@ The library also has these advanced algorithms:
 * Table lookup - `QuantumArithmetic.TableFunctions.TableLookup`.
 * Square root - `QuantumArithmetic.MCT2018.SquareRoot`.
 * Greatest common divisor - `QuantumArithmetic.MSIM2013.GreatestCommonDivisor`.
+
+## Authors
+
+The library was written by [Dmytro Fedoriaka](https://github.com/fedimser),
+[Yingrong Chen](https://github.com/YingrongChen) and
+[Brian Goldsmith](https://github.com/bdg221) under
+supervision and with advice of [Mariia Mykhailova](https://github.com/tcNickolas).

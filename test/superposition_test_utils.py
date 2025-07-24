@@ -25,11 +25,11 @@ class IntSuperposition:
         assert math.isclose(sum(self.value_to_prob.values()), 1.0, abs_tol=1e-9)
 
     @staticmethod
-    def random_of_two(n):
-        """Random superposition of 2 distinct inetegrs between 0 and 2**n-1."""
+    def random_of_two(a, b):
+        """Random superposition of 2 distinct inetegrs in range [a,b]."""
         v1, v2 = 0, 0
         while v1 == v2:
-            v1, v2 = random.randint(0, 2**n - 1), random.randint(0, 2**n - 1)
+            v1, v2 = random.randint(a, b), random.randint(a, b)
         p1 = random.uniform(0, 1)
         p2 = 1 - p1
         return IntSuperposition({v1: p1, v2: p2})
@@ -104,7 +104,7 @@ def check_superposition_unary_inplace(n: int, op: str, classical_op: Callable[[i
     applies given operation and checks that result is expected superposition.
     """
     qsharp.init(project_root="./lib/")
-    x1 = IntSuperposition.random_of_two(n)
+    x1 = IntSuperposition.random_of_two(0, 2**n-1)
     program = x1.write_to_register(n, "q") + f"{op}(q);"
     qsharp.eval(program)
     state = read_superposition(out_size=n)
@@ -122,8 +122,8 @@ def check_superposition_binary_inplace(
     is the expected superposition.
     """
     qsharp.init(project_root="./lib/")
-    x0 = IntSuperposition.random_of_two(n)
-    x1 = IntSuperposition.random_of_two(n)
+    x0 = IntSuperposition.random_of_two(0, 2**n-1)
+    x1 = IntSuperposition.random_of_two(0, 2**n-1)
     program = "\n".join(
         [x0.write_to_register(n, "q0"), x1.write_to_register(n, "q1"), f"{op}(q0,q1);"],
     )
@@ -144,8 +144,8 @@ def check_superposition_binary(
     the third second register is the expected superposition.
     """
     qsharp.init(project_root="./lib/")
-    x0 = IntSuperposition.random_of_two(n[0])
-    x1 = IntSuperposition.random_of_two(n[1])
+    x0 = IntSuperposition.random_of_two(0, 2**n[0]-1)
+    x1 = IntSuperposition.random_of_two(0, 2**n[1]-1)
     program = "\n".join(
         [
             x0.write_to_register(n[0], "q0"),

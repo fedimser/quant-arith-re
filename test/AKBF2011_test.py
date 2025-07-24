@@ -2,6 +2,7 @@ import pytest
 from qsharp import init, eval
 import random
 
+from superposition_test_utils import check_superposition_binary
 
 @pytest.fixture(scope="session", autouse=True)
 def setup():
@@ -15,3 +16,9 @@ def test_division(n: int):
         q, r = eval(f"TestUtils.Test_Divide_Restoring({n},{x},{y},{op})")
         assert r == x % y
         assert q == x // y
+
+def test_superposition():
+    n = 8
+    op = "QuantumArithmetic.AKBF2011.Divide_Restoring"
+    classical_op = lambda x, y: x // y
+    check_superposition_binary([n, n, n], op, classical_op)

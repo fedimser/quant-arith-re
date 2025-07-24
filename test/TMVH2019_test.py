@@ -2,6 +2,8 @@ import pytest
 from qsharp import init, eval
 import random
 
+from superposition_test_utils import check_superposition_binary
+
 
 @pytest.fixture(scope="session", autouse=True)
 def setup():
@@ -59,3 +61,9 @@ def test_Divide(n: int):
     x, y = random.randint(0, 2**n-1), random.randint(1, 2**(n-1)-1)
     x1, y1, z1 = eval(f"TestUtils.TernaryOp({n},{n-1},{n},{x}L,{y}L,0L,{op})")
     assert (x1, y1, z1) == (x % y, y, x//y)
+
+
+def test_superposition():
+    n = 8
+    op = "QuantumArithmetic.TMVH2019.Divide"
+    check_superposition_binary([n, n - 1, n], op, lambda x, y: x // y)

@@ -19,6 +19,6 @@ jobs:
       - name: Install requirements
         run: |
           pip install pytest
-          pip install qsharp==1.13.2
+          pip install qsharp==1.19.0
       - name: Run tests
         run: pytest

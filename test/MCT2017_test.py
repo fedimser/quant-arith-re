@@ -2,6 +2,8 @@ import pytest
 from qsharp import init, eval
 import random
 
+from superposition_test_utils import check_superposition_binary
+
 
 @pytest.fixture(scope="session", autouse=True)
 def setup():
@@ -20,3 +22,9 @@ def test_Multiply(n1: int, n2: int):
         ans = eval(f"TestUtils.TestMultiply({n1},{n2},{a}L,{b}L,{op})")
         expected = a*b
         assert ans == expected
+
+
+
+def test_superposition():
+    op = "QuantumArithmetic.MCT2017.Multiply"
+    check_superposition_binary([8, 8, 16], op, lambda x, y: x * y)

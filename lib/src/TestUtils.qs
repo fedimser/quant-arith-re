@@ -1,11 +1,12 @@
-import Std.Convert.BigIntAsBoolArray;
+import Std.Arrays.Reversed;
+import Std.Convert;
 import Std.Diagnostics.Fact;
 import Std.Math.ExpModI;
-
+import Std.StatePreparation.PreparePureStateD;
 
 // Writes little-endian integer to quantum register (prepared in 0 state).
 operation ApplyBigInt(val : BigInt, reg : Qubit[]) : Unit is Adj + Ctl {
-    let bits = BigIntAsBoolArray(val, Length(reg));
+    let bits = Convert.BigIntAsBoolArray(val, Length(reg));
     ApplyPauliFromBitString(PauliX, true, bits, reg);
 }
 
@@ -275,7 +276,7 @@ operation TestCompare(n : Int, a_val : BigInt, b_val : BigInt, op : (Qubit[], Qu
     return MResetZ(ans) == One;
 }
 
-operation Test_Subtract_NotEqualBit(n : Int, a_val : BigInt, m : Int, b_val : BigInt, c_val: Int, op : (Qubit[], Qubit[], Qubit, Qubit) => Unit) : BigInt {
+operation Test_Subtract_NotEqualBit(n : Int, a_val : BigInt, m : Int, b_val : BigInt, c_val : Int, op : (Qubit[], Qubit[], Qubit, Qubit) => Unit) : BigInt {
     use a = Qubit[n];
     use b = Qubit[m];
     use s2 = Qubit();
@@ -301,7 +302,7 @@ operation Test_Subtract_Minuend(n : Int, a_val : BigInt, b_val : BigInt, op : (Q
     return MeasureBigInt(b);
 }
 
-operation Test_Subtract_Minuend_Unequal(n : Int, a_val : BigInt, m : Int, b_val: BigInt, op : (Qubit[], Qubit[]) => Unit) : BigInt {
+operation Test_Subtract_Minuend_Unequal(n : Int, a_val : BigInt, m : Int, b_val : BigInt, op : (Qubit[], Qubit[]) => Unit) : BigInt {
     use a = Qubit[n];
     use b = Qubit[m];
     ApplyBigInt(a_val, a);
@@ -311,7 +312,7 @@ operation Test_Subtract_Minuend_Unequal(n : Int, a_val : BigInt, m : Int, b_val:
     return MeasureBigInt(b);
 }
 
-operation Test_Subtract(n : Int, a_val : BigInt, b_val: BigInt, c_val: Int, op : (Qubit[], Qubit[], Qubit) => Unit) : BigInt {
+operation Test_Subtract(n : Int, a_val : BigInt, b_val : BigInt, c_val : Int, op : (Qubit[], Qubit[], Qubit) => Unit) : BigInt {
     use a = Qubit[n];
     use b = Qubit[n];
     use ctr = Qubit();
@@ -324,4 +325,20 @@ operation Test_Subtract(n : Int, a_val : BigInt, b_val: BigInt, c_val: Int, op :
     Fact(MeasureBigInt(a) == a_val, "a was changed.");
     Fact(MeasureInteger([ctr]) == c_val, "Control qubit was changed.");
     return MeasureBigInt(b);
+}
+
+function ReverseInt(nbits: Int, x: Int) : Int {
+    return Convert.BoolArrayAsInt(Reversed(Convert.IntAsBoolArray(x, nbits)));
+}
+
+// Sets qs := a1*|v1> + a2*|v2>.
+// qs must be prepared in |0> state.
+// Must be |a1|^2 + |a2|^2=1, v1!=v2.
+// Registers are little-endian.
+operation PrepareSuperposition(qs : Qubit[], a1 : Double, v1 : Int, a2 : Double, v2 : Int) : Unit is Ctl {
+    let n = Length(qs);
+    mutable coefs : Double[] = [0.0, size=1 <<< n];
+    set coefs w/= ReverseInt(n, v1) <- a1;
+    set coefs w/= ReverseInt(n, v2) <- a2;
+    PreparePureStateD(coefs, qs);
 }

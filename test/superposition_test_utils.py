@@ -109,7 +109,7 @@ def check_superposition_unary_inplace(n: int, op: str, classical_op: Callable[[i
     qsharp.eval(program)
     state = read_superposition(out_size=n)
     expected_state = apply_unary_op(x1, classical_op)
-    assert state == expected_state
+    assert state == expected_state, f"{state}=={expected_state}"
 
 
 def check_superposition_binary_inplace(
@@ -130,7 +130,7 @@ def check_superposition_binary_inplace(
     qsharp.eval(program)
     state = read_superposition(out_size=n)
     expected_state = apply_binary_op(x0, x1, classical_op)
-    assert state == expected_state
+    assert state == expected_state, f"{state}=={expected_state}"
 
 
 def check_superposition_binary(
@@ -157,4 +157,4 @@ def check_superposition_binary(
     qsharp.eval(program)
     state = read_superposition(out_size=n[2])
     expected_state = apply_binary_op(x0, x1, classical_op)
-    assert state == expected_state
+    assert state == expected_state, f"{state}=={expected_state}"

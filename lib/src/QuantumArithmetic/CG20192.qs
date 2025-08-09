@@ -90,7 +90,7 @@ operation ModExpWindow(exponent : Qubit[], ans : Qubit[], base : BigInt, modulus
     let expWindows = Arrays.Chunks(expWindowLen, exponent);
 
     // skip the first two expWindows with a direct lookup
-    // based on Gidney 2025 (https://arxiv.org/abs/2505.15917)
+    // based on [Gidney 2025](https://arxiv.org/abs/2505.15917)
     let skipNum = 
         if (expWindowLen * 2 < n1) {
             expWindowLen * 2
@@ -134,16 +134,8 @@ internal function ModExpData(factor : BigInt, expLength : Int, mulLength : Int, 
     data
 }
 
-/// # Summary
 /// Computes zs += ys * (base ^ xs) % mod (for small registers xs and ys)
-///
-/// # Reference
-/// [arXiv:1905.07682, Fig. 5](https://arxiv.org/abs/1905.07682)
-///
-/// # Remark
-/// Unlike in the reference, this implementation uses regular addition
-/// instead of modular addition because the target register is encoded
-/// using the coset representation.
+/// based on Fig. 5 in [Gidney 2019](https://arxiv.org/abs/1905.07682)
 internal operation AddExpModWindowed(
     base : BigInt,
     mod : BigInt,

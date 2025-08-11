@@ -1,13 +1,13 @@
-import QuantumArithmetic.Yuan2022.Divide;
+import QuantumArithmetic.CG20192.ModExpWindow;
 import TestUtils.*;
 import QuantumArithmetic.Utils;
 
 // For debugging, run with Ctrl+F5,
 operation Main() : Unit {
     let n = 6;
-    let m = 2;
-    let a = 37;
-    let b = 1;
-    let ans = Test_Divide_Unequal(n, a, m, b, Divide);
+    let a = 2L;
+    let x = 42L;
+    let N = 11L;
+    let ans = TestModExp(n, a, x, N, ModExpWindow(_, _, _, _, 2, 2));
     Message($"ans={ans}");
 }

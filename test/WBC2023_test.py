@@ -2,6 +2,8 @@ import pytest
 from qsharp import init, eval
 import random
 
+from superposition_test_utils import check_superposition_binary
+
 
 @pytest.fixture(scope="session", autouse=True)
 def setup():
@@ -31,3 +33,12 @@ def test_Add(n: int, radix: int):
             )
             expected = (a + b) % (2**n)
             assert ans == expected
+
+
+
+def test_superposition():
+    n = 8
+    radix = 3
+    op = f"QuantumArithmetic.WBC2023.Add(_,_,_,{radix})"
+    classical_op = lambda x, y: (x + y) % (2**n)
+    check_superposition_binary([n,n,n], op, classical_op)

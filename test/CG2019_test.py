@@ -2,6 +2,8 @@ import pytest
 from qsharp import init, eval
 import random
 
+from superposition_test_utils import check_superposition_binary
+
 
 @pytest.fixture(scope="session", autouse=True)
 def setup():
@@ -22,3 +24,10 @@ def test_MultiplyKaratsuba(n: int):
     x, y = random.randint(0, 2**n-1), random.randint(0, 2**n-1)
     ans = eval(f"TestUtils.TestMultiply({n},{n},{x}L,{y}L,{op})")
     assert ans == x*y 
+
+
+def test_superposition():
+    n = 8
+    op = "QuantumArithmetic.CG2019.MultiplyKaratsuba"
+    classical_op = lambda x, y: x*y
+    check_superposition_binary([n,n,2*n], op, classical_op)

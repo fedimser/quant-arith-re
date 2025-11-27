@@ -44,7 +44,7 @@ operation CtrlAdd(Ctrl : Qubit, A : Qubit[], B : Qubit[], Z0 : Qubit, Z1 : Qubit
     }
 }
 
-/// Computes C:=A+B.
+/// Computes C:=A*B.
 /// Supports inputs of different sizes.
 operation Multiply(A : Qubit[], B : Qubit[], C : Qubit[]) : Unit is Adj + Ctl {
     let n1 = Length(A);

@@ -23,7 +23,7 @@ operation AddNop(P : Qubit[], B : Qubit[], Am : Qubit) : Unit is Adj + Ctl {
     }
 }
 
-// Computes P+=A*B (mod 2^n).
+// Computes P+=A*B (mod 2^(2n)).
 operation Multiply(A : Qubit[], B : Qubit[], P : Qubit[]) : Unit is Adj + Ctl {
     let n : Int = Length(A);
     Fact(Length(B) == n, "Register sizes must match.");

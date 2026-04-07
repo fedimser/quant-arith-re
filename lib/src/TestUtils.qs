@@ -327,7 +327,7 @@ operation Test_Subtract(n : Int, a_val : BigInt, b_val : BigInt, c_val : Int, op
     return MeasureBigInt(b);
 }
 
-function ReverseInt(nbits: Int, x: Int) : Int {
+function ReverseInt(nbits : Int, x : Int) : Int {
     return Convert.BoolArrayAsInt(Reversed(Convert.IntAsBoolArray(x, nbits)));
 }
 
@@ -337,8 +337,10 @@ function ReverseInt(nbits: Int, x: Int) : Int {
 // Registers are little-endian.
 operation PrepareSuperposition(qs : Qubit[], a1 : Double, v1 : Int, a2 : Double, v2 : Int) : Unit is Ctl {
     let n = Length(qs);
-    mutable coefs : Double[] = [0.0, size=1 <<< n];
+    mutable coefs : Double[] = [0.0, size = 1 <<< n];
     set coefs w/= ReverseInt(n, v1) <- a1;
     set coefs w/= ReverseInt(n, v2) <- a2;
     PreparePureStateD(coefs, qs);
 }
+
+export ApplyBigInt, MeasureBigInt, BinaryOp, BinaryOpInPlace, BinaryOpArb, TernaryOp, UnaryOpInPlace;

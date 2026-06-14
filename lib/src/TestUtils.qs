@@ -26,6 +26,39 @@ operation MeasureBigInt(reg : Qubit[]) : BigInt {
     return ans;
 }
 
+/// Tests artihemtic operation that acts on array of qubit registers.
+/// Numbers are unsigned little-endian integers.
+operation TestArithmeticOp(
+    op : (Qubit[][]) => Unit,
+    sizes : Int[],
+    vals : BigInt[]
+) : BigInt[] {
+    Fact(Length(sizes) == Length(vals), "sizes and vals must have the same length.");
+    let n = Length(sizes);
+    mutable total = 0;
+    for sz in sizes {
+        set total += sz;
+    }
+    use allQubits = Qubit[total];
+    mutable regs : Qubit[][] = [];
+    mutable offset = 0;
+    for sz in sizes {
+        set regs += [allQubits[offset..offset + sz - 1]];
+        set offset += sz;
+    }
+    for i in 0..n - 1 {
+        ApplyBigInt(vals[i], regs[i]);
+    }
+
+    op(regs);
+
+    mutable results : BigInt[] = [];
+    for i in 0..n - 1 {
+        set results += [MeasureBigInt(regs[i])];
+    }
+    return results;
+}
+
 // Applies binary operation on quantum integers.
 // 1. Creates qubit register x of size n, populates it with integer x_val.
 // 2. Creates qubit register y of size n, populates it with integer y_val.
@@ -145,6 +178,7 @@ operation UnaryOpInPlace(n : Int, x_val : BigInt, op : (Qubit[]) => Unit) : BigI
     op(x);
     return MeasureBigInt(x);
 }
+
 
 /// Computes op(x).
 /// Also checks that Controlled functor is implemented correctly (at least for

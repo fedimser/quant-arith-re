@@ -71,3 +71,32 @@ operation FlipFirst(target : Qubit[], ctr : Qubit[]) : Unit is Ctl + Adj {
         }
     }
 }
+
+// Flips target if x==y.
+operation FlipIfEqual(x : Qubit[], y : BigInt, target : Qubit) : Unit is Ctl + Adj {
+    let y_bits = Std.Convert.BigIntAsBoolArray(y, Length(x));
+    within {
+        ApplyPauliFromBitString(PauliX, false, y_bits, x);
+    } apply {
+        Controlled X(x, (target));
+    }
+}
+
+// Increments register x.
+operation IncrementByFlip(x : Qubit[]) : Unit is Adj {
+    use ctr = Qubit[Std.Math.Floor(Log2(Length(x) + 1)) + 1];
+    use carry = Qubit();
+    CountTrailingOnes(x, ctr);
+    QuantumArithmetic.ConstAdder.AddConstant(1L, ctr);
+    FlipFirst(x + [carry], ctr);
+    QuantumArithmetic.ConstAdder.AddConstant(-1L, ctr);
+
+    // Uncompute carry.
+    // We know that carry=1 iff ctr=Length(x).
+    FlipIfEqual(ctr, Std.Convert.IntAsBigInt(Length(x)), carry);
+
+    // Uncompute ctr.
+    ApplyToEachCA(X, x);
+    Adjoint CountTrailingOnes(x, ctr);
+    ApplyToEachCA(X, x);
+}

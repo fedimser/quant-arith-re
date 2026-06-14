@@ -27,7 +27,7 @@ def test_CountTrailingOnes_exhaustive(x_size: int):
 
 
 @pytest.mark.parametrize("x_size", [10, 20, 30])
-def test_CountTrailingOnes(x_size: int):
+def test_CountTrailingOnes_random(x_size: int):
     op = "QuantumArithmetic.LAInc.CountTrailingOnes"
     ans_size = math.floor(math.log2(x_size)) + 1
     tester = ArithmeticOpTester(op, [x_size, ans_size])
@@ -50,3 +50,20 @@ def test_FlipFirst(target_size: int):
         target_init = random.randint(0, 2**target_size - 1)
         result = tester.run([target_init, flip_count])
         assert result == [target_init ^ ((1 << flip_count) - 1), flip_count]
+
+
+@pytest.mark.parametrize("n", [1, 2, 3, 4, 5, 6])
+def test_IncrementByFlip_exhaustive(n: int):
+    op = "QuantumArithmetic.LAInc.IncrementByFlip"
+    tester = ArithmeticOpTester(op, [n])
+    for x in range(2**n):
+        assert tester.run([x]) == [(x + 1) % (2**n)]
+
+
+@pytest.mark.parametrize("n", [10, 20, 15, 16, 100])
+def test_IncrementByFlip_random(n: int):
+    op = "QuantumArithmetic.LAInc.IncrementByFlip"
+    tester = ArithmeticOpTester(op, [n])
+    xs = [0, 1, 2**n - 2, 2**n - 1] + [random.randint(0, 2**n - 1) for _ in range(20)]
+    for x in xs:
+        assert tester.run([x]) == [(x + 1) % (2**n)]

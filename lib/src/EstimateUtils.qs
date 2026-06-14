@@ -1,3 +1,8 @@
+operation RunUnaryOp(n : Int, op : (Qubit[]) => Unit) : Unit {
+    use a = Qubit[n];
+    op(a);
+}
+
 operation BinaryOpExtraOut(n : Int, x_val : Int, y_val : Int, op : (Qubit[], Qubit[], Qubit[], Qubit) => Unit) : Int {
     use x = Qubit[n];
     use y = Qubit[n];
@@ -53,14 +58,14 @@ operation RunModExp(n : Int, op : (Qubit[], Qubit[], BigInt, BigInt) => Unit) : 
     op(x_qubits, ans, a, N);
 }
 
-operation RunRadix(n: Int, radix: Int, op : (Qubit[], Qubit[], Qubit[], Int, (Qubit[], Qubit[], Qubit[]) => Unit is Adj) => Unit is Adj, adder_op: (Qubit[], Qubit[], Qubit[]) => Unit is Adj) : Unit {
+operation RunRadix(n : Int, radix : Int, op : (Qubit[], Qubit[], Qubit[], Int, (Qubit[], Qubit[], Qubit[]) => Unit is Adj) => Unit is Adj, adder_op : (Qubit[], Qubit[], Qubit[]) => Unit is Adj) : Unit {
     use a = Qubit[n];
     use b = Qubit[n];
     use c = Qubit[n];
     op(a, b, c, radix, adder_op);
 }
 
-operation RunRadixCarry(n: Int, radix: Int, op : (Qubit[], Qubit[], Qubit[], Int, (Qubit[], Qubit[], Qubit[], Qubit) => Unit is Adj) => Unit is Adj, adder_op: (Qubit[], Qubit[], Qubit[], Qubit) => Unit is Adj) : Unit {
+operation RunRadixCarry(n : Int, radix : Int, op : (Qubit[], Qubit[], Qubit[], Int, (Qubit[], Qubit[], Qubit[], Qubit) => Unit is Adj) => Unit is Adj, adder_op : (Qubit[], Qubit[], Qubit[], Qubit) => Unit is Adj) : Unit {
     use a = Qubit[n];
     use b = Qubit[n];
     use c = Qubit[n];

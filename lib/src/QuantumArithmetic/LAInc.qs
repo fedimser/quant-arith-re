@@ -9,27 +9,52 @@ function Log2(x : Int) : Double {
 /// significant) "1" bits in register x before first zero bit. CTO(0)=0.
 /// ans must be prepared in zero state.
 operation CountTrailingOnes(x : Qubit[], ans : Qubit[]) : Unit is Ctl + Adj {
-    let x_len = Length(x);
-    if (x_len == 1) {
-        CNOT(x[0], ans[0]);
-    } elif (x_len == 2) {
-        X(x[1]);
-        CCNOT(x[0], x[1], ans[0]);
-        X(x[1]);
-        CCNOT(x[0], x[1], ans[1]);
-    } else {
-        let n : Int = Std.Math.Ceiling(Log2(x_len));
-        let x_low = x[0..(1 <<< (n - 1))-1];
-        let x_high = x[(1 <<< (n - 1))..x_len-1];
-        if (x_len == 1 <<< n) {
-            Std.Diagnostics.Fact(Length(ans) >= n + 1, "ans too small");
-            CountTrailingOnes(x_low, ans[0..n-1]);
-            Controlled CountTrailingOnes([ans[n-1]], (x_high, ans[0..n-2] + [ans[n]]));
-            CNOT(ans[n], ans[n-1]);
+    body (...) {
+        Controlled CountTrailingOnes([], (x, ans));
+    }
+    controlled (ctrl, ...) {
+        let x_len = Length(x);
+        let ctrl_len = Length(ctrl);
+        if ctrl_len >= 2 {
+            use anc = Qubit();
+            within {
+                AND(ctrl[0], ctrl[1], anc);
+            } apply {
+                Controlled CountTrailingOnes([anc] + ctrl[2..ctrl_len-1], (x, ans));
+            }
+        } elif (x_len == 1 and ctrl_len == 0) {
+            CNOT(x[0], ans[0]);
+        } elif (x_len == 1 and ctrl_len == 1) {
+            CCNOT(ctrl[0], x[0], ans[0]);
+        } elif (x_len == 2 and ctrl_len == 0) {
+            X(x[1]);
+            CCNOT(x[0], x[1], ans[0]);
+            X(x[1]);
+            CCNOT(x[0], x[1], ans[1]);
+        } elif (x_len == 2 and ctrl_len == 1) {
+            use x0 = Qubit();
+            within {
+                AND(ctrl[0], x[0], x0);
+            } apply {
+                X(x[1]);
+                CCNOT(x0, x[1], ans[0]);
+                X(x[1]);
+                CCNOT(x0, x[1], ans[1]);
+            }
         } else {
-            Std.Diagnostics.Fact(Length(ans) >= n, "ans too small");
-            CountTrailingOnes(x_low, ans[0..n-1]);
-            Controlled CountTrailingOnes([ans[n-1]], (x_high, ans[0..n-2]));
+            let n : Int = Std.Math.Ceiling(Log2(x_len));
+            let x_low = x[0..(1 <<< (n - 1))-1];
+            let x_high = x[(1 <<< (n - 1))..x_len-1];
+            if (x_len == 1 <<< n) {
+                Std.Diagnostics.Fact(Length(ans) >= n + 1, "ans too small");
+                Controlled CountTrailingOnes(ctrl, (x_low, ans[0..n-1]));
+                Controlled CountTrailingOnes(ctrl + [ans[n-1]], (x_high, ans[0..n-2] + [ans[n]]));
+                Controlled CNOT(ctrl, (ans[n], ans[n-1]));
+            } else {
+                Std.Diagnostics.Fact(Length(ans) >= n, "ans too small");
+                Controlled CountTrailingOnes(ctrl, (x_low, ans[0..n-1]));
+                Controlled CountTrailingOnes(ctrl + [ans[n-1]], (x_high, ans[0..n-2]));
+            }
         }
     }
 }

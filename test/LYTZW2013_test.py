@@ -1,11 +1,8 @@
-import pytest
-from qsharp import init, eval
 import random
 
+import pytest
 
-@pytest.fixture(scope="session", autouse=True)
-def setup():
-    init(project_root="./lib/")
+from test_utils import ArithmeticOpTester
 
 
 @pytest.mark.parametrize("op", [
@@ -15,10 +12,10 @@ def setup():
 ])
 @pytest.mark.parametrize("n", [1, 2, 3, 4, 5])
 def test_Increment_Exhaustive(op: str, n: int):
+    tester = ArithmeticOpTester(op, [n])
     N = 2**n
     for x in range(N):
-        ans = eval(f"TestUtils.UnaryOpInPlace({n},{x}L,{op})")
-        assert ans == (x+1) % N
+        assert tester.run([x])[0] == (x + 1) % N
 
 
 @pytest.mark.parametrize("op", [
@@ -28,8 +25,8 @@ def test_Increment_Exhaustive(op: str, n: int):
 ])
 @pytest.mark.parametrize("n", [8, 16, 32, 64, 65])
 def test_Increment(op: str, n: int):
+    tester = ArithmeticOpTester(op, [n])
     N = 2**n
     for _ in range(5):
-        x = random.randint(0, N-1)
-        ans = eval(f"TestUtils.UnaryOpInPlaceCtl({n},{x}L,{op})")
-        assert ans == (x+1) % N
+        x = random.randint(0, N - 1)
+        assert tester.run([x])[0] == (x + 1) % N

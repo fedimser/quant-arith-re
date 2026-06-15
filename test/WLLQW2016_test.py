@@ -1,17 +1,13 @@
-import pytest
-from qsharp import init, eval
 import random
 
+import pytest
 
-@pytest.fixture(scope="session", autouse=True)
-def setup():
-    init(project_root="./lib/")
+from test_utils import ArithmeticOpTester
 
 
 @pytest.mark.parametrize("n", [1, 2, 3, 9, 16, 32])
 def test_Add(n: int):
-    op = "QuantumArithmetic.WLLQW2016.Add_Mod2N"
+    tester = ArithmeticOpTester("QuantumArithmetic.WLLQW2016.Add_Mod2N", [n, n, n])
     for _ in range(10):
-        x, y = random.randint(0, 2**n-1), random.randint(0, 2**n-1)
-        ans = eval(f"TestUtils.BinaryOp({n},{x}L,{y}L,{op})")
-        assert ans == (x+y) % 2**n
+        x, y = random.randint(0, 2**n - 1), random.randint(0, 2**n - 1)
+        assert tester.run([x, y, 0]) == [x, y, (x + y) % 2**n]

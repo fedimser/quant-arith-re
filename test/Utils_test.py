@@ -1,46 +1,37 @@
-import pytest
-from qsharp import init, eval
 import random
+
+import pytest
 
 from superposition_test_utils import (
     check_superposition_unary_inplace,
     check_superposition_binary_inplace,
 )
-
-
-@pytest.fixture(scope="session", autouse=True)
-def setup():
-    init(project_root="./lib/")
+from test_utils import ArithmeticOpTester
 
 
 @pytest.mark.parametrize("n", [8, 16])
 def test_RotateRight(n: int):
-    op = "QuantumArithmetic.Utils.RotateRight"
+    tester = ArithmeticOpTester("QuantumArithmetic.Utils.RotateRight", [n])
     for _ in range(5):
         x = random.randint(0, 2**n - 1)
-        ans = eval(f"TestUtils.UnaryOpInPlace({n},{x}L,{op})")
-        expected = (x >> 1) + ((x % 2) << (n - 1))
-        assert ans == expected
+        assert tester.run([x])[0] == (x >> 1) + ((x % 2) << (n - 1))
 
 
 @pytest.mark.parametrize("n", [8, 16])
 def test_RotateLeft(n: int):
-    op = "QuantumArithmetic.Utils.RotateLeft"
+    tester = ArithmeticOpTester("QuantumArithmetic.Utils.RotateLeft", [n])
     for _ in range(5):
         x = random.randint(0, 2**n - 1)
-        ans = eval(f"TestUtils.UnaryOpInPlace({n},{x}L,{op})")
-        expected = (x % (2 ** (n - 1)) << 1) + (x >> (n - 1))
-        assert ans == expected
+        assert tester.run([x])[0] == (x % (2 ** (n - 1)) << 1) + (x >> (n - 1))
 
 
 @pytest.mark.parametrize("n", [8, 16])
 def test_Subtract(n: int):
-    op = "QuantumArithmetic.Utils.Subtract"
+    tester = ArithmeticOpTester("QuantumArithmetic.Utils.Subtract", [n, n])
     for _ in range(5):
         x = random.randint(0, 2**n - 1)
         y = random.randint(0, 2**n - 1)
-        ans = eval(f"TestUtils.BinaryOpInPlace({n},{x}L,{y}L,{op})")
-        assert ans == (y - x) % (2**n)
+        assert tester.run([x, y]) == [x, (y - x) % (2**n)]
 
 
 def test_superposition_RotateRight():

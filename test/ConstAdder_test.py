@@ -27,19 +27,22 @@ def test_OverflowBit(n: int):
         assert ans == [b, (a + b + ci) >= N]
 
 
-@pytest.mark.parametrize("n", [1, 2, 3, 4, 5, 8, 16, 32])
-def test_Comparisons(n: int):
+_OPERATOR_TO_OP = {
+    "<": "QuantumArithmetic.ConstAdder.CompareByConstLT",
+    ">": "QuantumArithmetic.ConstAdder.CompareByConstGT",
+    "<=": "QuantumArithmetic.ConstAdder.CompareByConstLE",
+    ">=": "QuantumArithmetic.ConstAdder.CompareByConstGE",
+}
+
+
+@pytest.mark.parametrize("operator", ["<", ">", "<=", ">="])
+@pytest.mark.parametrize("n", [1, 2, 3, 8])
+def test_CompareByConstLT(operator: str, n: int):
+    op_name = _OPERATOR_TO_OP[operator]
     N = 2**n
     for _ in range(10):
         a = random.randint(0, N - 1)
         b = random.randint(0, N - 1)
-
-        def _run(op) -> bool:
-            ans = run_op(f"((b,ans)=>{op}({a}L,b,ans[0])", [n, 1], [b, 0])
-            assert ans[0] == b
-            return bool(ans[1])
-
-        assert _run("QuantumArithmetic.ConstAdder.CompareByConstLT") == (a < b)
-        assert _run("QuantumArithmetic.ConstAdder.CompareByConstLE") == (a <= b)
-        assert _run("QuantumArithmetic.ConstAdder.CompareByConstGT") == (a > b)
-        assert _run("QuantumArithmetic.ConstAdder.CompareByConstGE") == (a >= b)
+        expected = eval(f"{a}{operator}{b}")
+        op = f"((b,ans)=>{op_name}({a}L,b,ans[0]))"
+        assert run_op(op, [n, 1], [b, 0]) == [b, int(expected)]

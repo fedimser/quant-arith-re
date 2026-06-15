@@ -60,10 +60,20 @@ def test_IncrementByFlip_exhaustive(n: int):
         assert tester.run([x]) == [(x + 1) % (2**n)]
 
 
-@pytest.mark.parametrize("n", [10, 20, 15, 16, 100])
+@pytest.mark.parametrize("n", [10, 15, 16, 20, 100])
 def test_IncrementByFlip_random(n: int):
     op = "QuantumArithmetic.LAInc.IncrementByFlip"
     tester = ArithmeticOpTester(op, [n])
     xs = [0, 1, 2**n - 2, 2**n - 1] + [random.randint(0, 2**n - 1) for _ in range(20)]
     for x in xs:
         assert tester.run([x]) == [(x + 1) % (2**n)]
+
+
+@pytest.mark.parametrize("n", [10, 20])
+def test_IncrementByFlip_controlled(n: int):
+    op = "((c,x) => Controlled QuantumArithmetic.LAInc.IncrementByFlip(c,(x)))"
+    tester = ArithmeticOpTester(op, [1, n])
+    xs = [0, 1, 2**n - 2, 2**n - 1] + [random.randint(0, 2**n - 1) for _ in range(20)]
+    for x in xs:
+        assert tester.run([0, x]) == [0, x]
+        assert tester.run([1, x]) == [1, (x + 1) % (2**n)]

@@ -1,6 +1,14 @@
+/// Runs operation on the given number of qubits.
 operation RunUnaryOp(n : Int, op : (Qubit[]) => Unit) : Unit {
     use a = Qubit[n];
     op(a);
+}
+
+/// Runs controlled operation on the given number of qubits.
+operation RunUnaryOpCtl(n : Int, op : (Qubit[]) => Unit is Ctl) : Unit {
+    use ctrl = Qubit[1];
+    use a = Qubit[n];
+    Controlled op(ctrl, (a));
 }
 
 operation BinaryOpExtraOut(n : Int, x_val : Int, y_val : Int, op : (Qubit[], Qubit[], Qubit[], Qubit) => Unit) : Int {

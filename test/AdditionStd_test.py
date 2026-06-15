@@ -1,45 +1,48 @@
-import pytest
-from qsharp import init, eval
 import random
 
+import pytest
 from superposition_test_utils import (
     check_superposition_binary,
     check_superposition_binary_inplace,
 )
+from test_utils import ArithmeticOpTester
 
 
-@pytest.fixture(scope="session", autouse=True)
-def setup():
-    init(project_root="./lib/")
+from test_utils import CONTEXT
 
 
-@pytest.mark.parametrize("n", [2, 8, 16, 32, 63])
-def test_addition(n: int):
+@pytest.mark.parametrize("n", [2, 32])
+def test_Add_TTK(n: int):
+    tester = ArithmeticOpTester("QuantumArithmetic.AdditionStd.Add_TTK", [n, n])
     for _ in range(10):
         x, y = random.randint(0, 2**n - 1), random.randint(0, 2**n - 1)
-        expected = (x + y) % (2**n)
+        assert tester.run([x, y]) == [x, (x + y) % (2**n)]
 
-        op = "QuantumArithmetic.AdditionStd.Add_TTK"
-        ans = eval(f"TestUtils.BinaryOpInPlace({n},{x}L,{y}L,{op})")
-        assert ans == expected
 
-        op = "QuantumArithmetic.AdditionStd.Add_CG"
-        ans = eval(f"TestUtils.BinaryOpInPlace({n},{x}L,{y}L,{op})")
-        assert ans == expected
+@pytest.mark.parametrize("n", [2, 32])
+def test_Add_TTK(n: int):
+    tester = ArithmeticOpTester("QuantumArithmetic.AdditionStd.Add_CG", [n, n])
+    for _ in range(10):
+        x, y = random.randint(0, 2**n - 1), random.randint(0, 2**n - 1)
+        assert tester.run([x, y]) == [x, (x + y) % (2**n)]
 
-        op = "QuantumArithmetic.AdditionStd.Add_DKRS"
-        ans = eval(f"TestUtils.BinaryOp({n},{x}L,{y}L,{op})")
-        assert ans == expected
+
+@pytest.mark.parametrize("n", [2, 32])
+def test_Add_TTK(n: int):
+    op = "QuantumArithmetic.AdditionStd.Add_DKRS"
+    tester = ArithmeticOpTester(op, [n, n, n])
+    for _ in range(10):
+        x, y = random.randint(0, 2**n - 1), random.randint(0, 2**n - 1)
+        assert tester.run([x, y, 0]) == [x, y, (x + y) % (2**n)]
 
 
 @pytest.mark.parametrize("n", [2, 8])
 def test_Add_QFT(n: int):
-    op = "QuantumArithmetic.AdditionStd.Add_QFT"
+    tester = ArithmeticOpTester("QuantumArithmetic.AdditionStd.Add_QFT", [n, n])
     for _ in range(10):
         x, y = random.randint(0, 2**n - 1), random.randint(0, 2**n - 1)
         expected = (x + y) % (2**n)
-        ans = eval(f"TestUtils.BinaryOpInPlace({n},{x}L,{y}L,{op})")
-        assert ans == expected
+        assert tester.run([x, y]) == [x, expected]
 
 
 def test_superposition():

@@ -1,16 +1,13 @@
-import pytest
-from qsharp import init, eval
 import math
 
+import pytest
 
-@pytest.fixture(scope="session", autouse=True)
-def setup():
-    init(project_root="./lib/")
+from test_utils import ArithmeticOpTester
 
 
 @pytest.mark.parametrize("n1,n2", [(2, 3), (3, 13), (4, 41)])
 def test_Factorial(n1: int, n2: int):
     op = "QuantumArithmetic.TableFunctions.Factorial"
+    tester = ArithmeticOpTester(op, [n1, n2])
     for i in range(2**n1):
-        ans = eval(f"TestUtils.BinaryOpArb({n1},{n2},{i}L,0L,{op})")
-        assert ans == (i, math.factorial(i))
+        assert tester.run([i, 0]) == [i, math.factorial(i)]

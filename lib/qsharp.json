@@ -49,7 +49,6 @@
     "src/QuantumArithmetic/WindowedArithmeticUtils/MulAdd_Window.qs",
     "src/QuantumArithmetic/WindowedArithmeticUtils/Util.qs",
     "src/QuantumArithmetic/WindowedArithmeticUtils/Xor.qs",
-    "src/Main.qs",
     "src/TestUtils.qs",
     "src/EstimateUtils.qs"
   ]

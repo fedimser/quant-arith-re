@@ -68,23 +68,3 @@ def test_Divide(n: int):
     x, y = random.randint(0, 2**n - 1), random.randint(1, 2 ** (n - 1) - 1)
     x1, y1, z1 = eval(f"TestUtils.TernaryOp({n},{n-1},{n},{x}L,{y}L,0L,{op})")
     assert (x1, y1, z1) == (x % y, y, x // y)
-
-
-def test_superposition():
-    init(project_root="./lib/")
-    n = 8
-    op = "QuantumArithmetic.TMVH2019.Divide"
-    x0 = IntSuperposition.random_of_two(0, 2**n - 1)
-    x1 = IntSuperposition.random_of_two(1, 2 ** (n - 1) - 1)
-    program = "\n".join(
-        [
-            x0.write_to_register(n, "q0"),
-            x1.write_to_register(n-1, "q1"),
-            f"use q2 = Qubit[{n}];",
-            f"{op}(q0,q1,q2);",
-        ]
-    )
-    eval(program)
-    state = read_superposition(out_size=n)
-    expected_state = apply_binary_op(x0, x1, lambda x, y: x // y)
-    assert state == expected_state

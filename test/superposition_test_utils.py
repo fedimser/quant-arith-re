@@ -2,9 +2,10 @@
 
 import random
 import math
-import qsharp
 from dataclasses import dataclass
 from typing import Callable
+
+from test_utils import CONTEXT
 
 
 def _reverse_int(nbits, x):
@@ -81,15 +82,14 @@ def apply_binary_op(
     return IntSuperposition(ans)
 
 
-def read_superposition(out_size) -> IntSuperposition:
-    """Reads superposition from current simulation state, projected on last `out_size` qubits.
+def read_superposition(dump, out_size) -> IntSuperposition:
+    """Reads superposition from simulation state, projected on last `out_size` qubits.
 
     The result will contain all possible measurement results for last `out_size`
     qubits (interpreted as little-endian integer resgister), with probabilities
     to get those resutls.
     """
     ans = dict()
-    dump = qsharp.dump_machine()
     for state_id in dump:
         val = _reverse_int(out_size, state_id % (2**out_size))
         amplitude = dump[state_id]
@@ -97,17 +97,28 @@ def read_superposition(out_size) -> IntSuperposition:
     return IntSuperposition(ans)
 
 
-def check_superposition_unary_inplace(n: int, op: str, classical_op: Callable[[int], int]):
+def check_superposition_unary_inplace(
+    n: int, op: str, classical_op: Callable[[int], int]
+):
     """Checks that unary operation acts correctly on superposition.
 
     Initializes n-qubit register to superposition of two random inetgers,
     applies given operation and checks that result is expected superposition.
     """
-    qsharp.init(project_root="./lib/")
-    x1 = IntSuperposition.random_of_two(0, 2**n-1)
-    program = x1.write_to_register(n, "q") + f"{op}(q);"
-    qsharp.eval(program)
-    state = read_superposition(out_size=n)
+    x1 = IntSuperposition.random_of_two(0, 2**n - 1)
+    program = "\n".join(
+        [
+            "{",
+            x1.write_to_register(n, "q"),
+            f"{op}(q);",
+            "Std.Diagnostics.DumpRegister(q);",
+            "ResetAll(q);",
+            "}",
+        ],
+    )
+    result = CONTEXT.run(program, 1, save_events=True)
+    dump = result[0]["events"][-1].state_dump().get_dict()
+    state = read_superposition(dump, out_size=n)
     expected_state = apply_unary_op(x1, classical_op)
     assert state == expected_state, f"{state}=={expected_state}"
 
@@ -121,14 +132,22 @@ def check_superposition_binary_inplace(
     inetgers, applies given operation and checks that result in second register
     is the expected superposition.
     """
-    qsharp.init(project_root="./lib/")
-    x0 = IntSuperposition.random_of_two(0, 2**n-1)
-    x1 = IntSuperposition.random_of_two(0, 2**n-1)
+    x0 = IntSuperposition.random_of_two(0, 2**n - 1)
+    x1 = IntSuperposition.random_of_two(0, 2**n - 1)
     program = "\n".join(
-        [x0.write_to_register(n, "q0"), x1.write_to_register(n, "q1"), f"{op}(q0,q1);"],
+        [
+            "{",
+            x0.write_to_register(n, "q0"),
+            x1.write_to_register(n, "q1"),
+            f"{op}(q0,q1);",
+            "Std.Diagnostics.DumpRegister(q0+q1);",
+            "ResetAll(q0+q1);",
+            "}",
+        ],
     )
-    qsharp.eval(program)
-    state = read_superposition(out_size=n)
+    result = CONTEXT.run(program, 1, save_events=True)
+    dump = result[0]["events"][-1].state_dump().get_dict()
+    state = read_superposition(dump, out_size=n)
     expected_state = apply_binary_op(x0, x1, classical_op)
     assert state == expected_state, f"{state}=={expected_state}"
 
@@ -138,23 +157,27 @@ def check_superposition_binary(
 ):
     """Checks that binary operation acts correctly on superposition.
 
-    Initializes three registers of sizes n[0], n[1], n[2]. First two will 
-    contain superposition of two random integers, and third one will be 
+    Initializes three registers of sizes n[0], n[1], n[2]. First two will
+    contain superposition of two random integers, and third one will be
     initialized to zeros. The applies given operation and checks that result in
     the third second register is the expected superposition.
     """
-    qsharp.init(project_root="./lib/")
-    x0 = IntSuperposition.random_of_two(0, 2**n[0]-1)
-    x1 = IntSuperposition.random_of_two(0, 2**n[1]-1)
+    x0 = IntSuperposition.random_of_two(0, 2 ** n[0] - 1)
+    x1 = IntSuperposition.random_of_two(0, 2 ** n[1] - 1)
     program = "\n".join(
         [
+            "{",
             x0.write_to_register(n[0], "q0"),
             x1.write_to_register(n[1], "q1"),
             f"use q2 = Qubit[{n[2]}];",
             f"{op}(q0,q1,q2);",
+            "Std.Diagnostics.DumpRegister(q0+q1+q2);",
+            "ResetAll(q0+q1+q2);",
+            "}",
         ]
     )
-    qsharp.eval(program)
-    state = read_superposition(out_size=n[2])
+    result = CONTEXT.run(program, 1, save_events=True)
+    dump = result[0]["events"][-1].state_dump().get_dict()
+    state = read_superposition(dump, out_size=n[2])
     expected_state = apply_binary_op(x0, x1, classical_op)
     assert state == expected_state, f"{state}=={expected_state}"

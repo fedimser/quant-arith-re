@@ -179,7 +179,6 @@ operation UnaryOpInPlace(n : Int, x_val : BigInt, op : (Qubit[]) => Unit) : BigI
     return MeasureBigInt(x);
 }
 
-
 /// Computes op(x).
 /// Also checks that Controlled functor is implemented correctly (at least for
 /// single control).

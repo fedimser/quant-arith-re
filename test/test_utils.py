@@ -42,3 +42,11 @@ class ArithmeticOpTester:
 
     def run(self, args: list[int]) -> list[int]:
         return self.test_callable(args)
+
+
+def run_op(op: str, arg_sizes: list[int], args: list[int]) -> list[int]:
+    return ArithmeticOpTester(op, arg_sizes).run(args)
+
+
+def run_unary_op(op: str, arg_size: int, arg: int) -> int:
+    return run_op(op, [arg_size], [arg])[0]

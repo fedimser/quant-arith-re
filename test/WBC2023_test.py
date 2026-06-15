@@ -1,38 +1,23 @@
-import pytest
-from qsharp import init, eval
 import random
 
+import pytest
+
 from superposition_test_utils import check_superposition_binary
+from test_utils import ArithmeticOpTester
 
 
-@pytest.fixture(scope="session", autouse=True)
-def setup():
-    init(project_root="./lib/")
-
-
-# @pytest.mark.parametrize("n", [6])
-# @pytest.mark.parametrize("radix", [3])
-# def test_Add(n: int, radix: int):
-#     op = "QuantumArithmetic.WBC2023_new.Add"
-#     for _ in range(10):
-#         x, y = random.randint(0, 2**n-1), random.randint(0, 2**n-1)
-#         ans = eval(f"TestUtils.BinaryOpInPlaceRadix({n},{x},{y},{radix},{op})")
-#         assert ans == (x+y) % 2**n
 
 
 @pytest.mark.parametrize("radix", [3, 4, 5, 6, 7, 8, 9, 10])
 @pytest.mark.parametrize("n", [3, 4, 5, 8, 12, 30])
 def test_Add(n: int, radix: int):
-    op = "QuantumArithmetic.WBC2023.Add"
+    op = f"QuantumArithmetic.WBC2023.Add(_,_,_,{radix})"
     if (n >= radix) and (n / radix < 10):
+        tester = ArithmeticOpTester(op, [n, n, n])
         for _ in range(5):
             a = random.randint(0, 2 ** (n - 1))
             b = random.randint(0, 2 ** (n - 1))
-            ans = eval(
-                f"QuantumArithmetic.WBC2023Test.BinaryOpRadix({n},{a}L,{b}L,{radix},{op})"
-            )
-            expected = (a + b) % (2**n)
-            assert ans == expected
+            assert tester.run([a, b, 0]) == [a, b, (a + b) % (2**n)]
 
 
 
@@ -41,4 +26,4 @@ def test_superposition():
     radix = 3
     op = f"QuantumArithmetic.WBC2023.Add(_,_,_,{radix})"
     classical_op = lambda x, y: (x + y) % (2**n)
-    check_superposition_binary([n,n,n], op, classical_op)
+    check_superposition_binary([n, n, n], op, classical_op)

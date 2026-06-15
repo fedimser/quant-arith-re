@@ -1,8 +1,7 @@
-import pytest
 import random
 
+import pytest
 from test_utils import ArithmeticOpTester
-
 
 
 @pytest.mark.parametrize("n", [3, 4, 7, 8, 9, 11, 12])

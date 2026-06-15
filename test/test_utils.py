@@ -6,17 +6,6 @@ import qdk
 CONTEXT = qdk.Context(project_root="./lib/")
 
 
-def pow_mod(x, y, p):
-    """Computes (x**y)%p."""
-    a, x = 1, x % p
-    while y > 0:
-        if y & 1:
-            a = (a * x) % p
-        y = y >> 1
-        x = (x * x) % p
-    return a
-
-
 def random_coprime(N):
     for _ in range(100):
         ans = random.randint(2, N - 1)
@@ -49,4 +38,8 @@ def run_op(op: str, arg_sizes: list[int], args: list[int]) -> list[int]:
 
 
 def run_unary_op(op: str, arg_size: int, arg: int) -> int:
-    return run_op(op, [arg_size], [arg])[0]
+    return CONTEXT.eval(f"TestUtils.TestUnaryOp({arg_size},{arg}L,{op})")
+
+
+def eval_qsharp(expr: str):
+    return CONTEXT.eval(expr)
